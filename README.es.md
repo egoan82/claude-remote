@@ -221,6 +221,7 @@ Cada sesión de Claude Code que corre en tmux aparece como una tarjeta:
 - **Línea de datos**: el destino de tmux (`sesión:ventana.panel`), la carpeta y un ícono de monitor 🖥️ si la sesión también está abierta en otra terminal.
 - **Vista previa**: las últimas líneas de la pantalla.
 - **Sin terminal**: si ninguna terminal tiene abierta la sesión (por ejemplo, cerraste la pestaña sin salir de Claude), la tarjeta lleva una barra roja a la izquierda y una franja que lo explica, con dos botones: **Abrir en la laptop** abre una ventana de terminal en la laptop unida a la sesión (`LAPTOP_TERMINAL`), y **Cerrar** la cierra tras confirmar. La conversación queda guardada y la retomas con `ct -- --resume`.
+- **Claude terminó**: si Claude ya salió y solo queda el shell, sin terminal abierta, la tarjeta lo indica y solo ofrece **Cerrar** para quitarla. Nunca aparecen shells con un proceso corriendo ni abiertos en una terminal.
 
 Toca una tarjeta para abrirla. La lista se actualiza cada 3 segundos mientras está a la vista; **jala hacia abajo** para recargar al instante.
 Sin sesiones aparece un mensaje que explica cómo crear una. Si no hay conexión con el servidor, lo indica un aviso rojo.

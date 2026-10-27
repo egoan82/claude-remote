@@ -6,7 +6,7 @@ const api = async (url, opts = {}) => {
   return res.headers.get('content-type')?.includes('json') ? res.json() : res.text();
 };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const STATE = { waiting: 'Espera respuesta', working: 'Trabajando', idle: 'Libre' };
+const STATE = { waiting: 'Espera respuesta', working: 'Trabajando', idle: 'Libre', ended: 'Claude terminó' };
 // Iconos (trazos estilo Lucide) para las plantillas de abajo.
 const ICON = {
   folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
@@ -15,6 +15,7 @@ const ICON = {
   waiting: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
   working: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
   idle: '<path d="M20 6 9 17l-5-5"/>',
+  ended: '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>',
   file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
@@ -52,7 +53,8 @@ async function refresh() {
         <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${STATE[s.state]}</span></div>
         <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span><span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : ''}</div>
         <pre>${esc(s.preview.join('\n'))}</pre>
-        ${s.attached ? '' : `<div class="orphan">${icon('waiting')}<span>Ninguna terminal la tiene abierta; sigue en segundo plano.</span><div class="acts"><button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button><button class="close-pane" type="button">Cerrar</button></div></div>`}
+        ${s.state === 'ended' ? `<div class="orphan">${icon('ended')}<span>Claude ya salió y solo queda el shell, sin terminal abierta.</span><div class="acts"><button class="close-pane" type="button">Cerrar</button></div></div>`
+          : s.attached ? '' : `<div class="orphan">${icon('waiting')}<span>Ninguna terminal la tiene abierta; sigue en segundo plano.</span><div class="acts"><button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button><button class="close-pane" type="button">Cerrar</button></div></div>`}
       </li>`).join('') : `
       <li class="empty">${icon('empty', 'i big')}<strong>No hay sesiones de Claude en tmux</strong><span>Crea una con “Nueva” o lanza <code>ct</code> en la laptop.</span></li>`;
     const waiting = list.filter((s) => s.state === 'waiting').length;
@@ -81,7 +83,7 @@ $('#sessions').addEventListener('click', async (e) => {
   }
   if (!e.target.closest('.close-pane')) return openPane(card.dataset.pane, true);
   const s = lastSessions.find((x) => x.pane === card.dataset.pane);
-  const aviso = s?.state === 'working' ? '\n\nOjo: está trabajando y se cortará lo que esté haciendo.' : '';
+  const aviso = s?.state === 'ended' ? '\n\nClaude ya terminó; solo se cierra el shell que quedó.' : s?.state === 'working' ? '\n\nOjo: está trabajando y se cortará lo que esté haciendo.' : '';
   if (!confirm(`¿Cerrar la sesión ${s?.target || ''}?\nLa conversación queda guardada (ct -- --resume).${aviso}`)) return;
   try { await api(`/api/panes/${encodeURIComponent(card.dataset.pane)}`, { method: 'DELETE' }); } catch (err) { $('#status').textContent = `No se pudo cerrar: ${err.message}`; }
   refresh();
