@@ -222,7 +222,7 @@ Every Claude Code session running in tmux appears as a card:
 - **Meta line**: the tmux target (`session:window.pane`), the working directory, and a 🖥️ monitor icon if the session is also attached in another terminal.
 - **Preview**: the last lines on screen.
 - **No terminal**: if no terminal is attached to the session (for example, you closed the tab without exiting Claude), the card gets a red left bar and a footer explaining it, with two buttons: **Abrir en la laptop** opens a terminal window on the laptop attached to the session (`LAPTOP_TERMINAL`), and **Cerrar** closes it after confirming. The conversation is kept, so you can resume it with `ct -- --resume`.
-- **Claude terminó** (Claude finished): when Claude has exited and only the leftover shell remains, with no terminal attached, the card says so and offers just **Cerrar** to remove it. Shells with a running process, or open in a terminal, are never listed.
+- **Claude terminó** (Claude finished): when Claude has exited and only the leftover shell remains, the card says so and offers just **Cerrar** to remove it. If that shell is still open in a laptop terminal (what `ct` leaves behind), closing it also closes that terminal. Shells with a running process, or hand-opened tmux shells with a terminal attached, are never listed.
 
 Tap a card to open it. The list refreshes every 3 seconds while visible; **pull down** to refresh right away.
 With no sessions you get an empty state that explains how to start one. If the server can't be reached, a red banner says so.

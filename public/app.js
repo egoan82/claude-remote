@@ -53,7 +53,7 @@ async function refresh() {
         <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${STATE[s.state]}</span></div>
         <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span><span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : ''}</div>
         <pre>${esc(s.preview.join('\n'))}</pre>
-        ${s.state === 'ended' ? `<div class="orphan">${icon('ended')}<span>Claude ya salió y solo queda el shell, sin terminal abierta.</span><div class="acts"><button class="close-pane" type="button">Cerrar</button></div></div>`
+        ${s.state === 'ended' ? `<div class="orphan">${icon('ended')}<span>${s.attached ? 'Claude ya salió y queda el shell abierto en una terminal de la laptop; al cerrarlo se cierra esa terminal.' : 'Claude ya salió y solo queda el shell, sin terminal abierta.'}</span><div class="acts"><button class="close-pane" type="button">Cerrar</button></div></div>`
           : s.attached ? '' : `<div class="orphan">${icon('waiting')}<span>Ninguna terminal la tiene abierta; sigue en segundo plano.</span><div class="acts"><button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button><button class="close-pane" type="button">Cerrar</button></div></div>`}
       </li>`).join('') : `
       <li class="empty">${icon('empty', 'i big')}<strong>No hay sesiones de Claude en tmux</strong><span>Crea una con “Nueva” o lanza <code>ct</code> en la laptop.</span></li>`;
