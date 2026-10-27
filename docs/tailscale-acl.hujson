@@ -1,0 +1,33 @@
+// Example Tailscale access policy (Tailscale admin console → Access controls).
+// Goal: only your phone can reach the computer running claude-remote.
+// The hosts and IPs below are fictional: replace them with your own (see `tailscale status`).
+//
+// How to apply it:
+//   1. https://login.tailscale.com/admin/acls/file
+//   2. Merge the "hosts" and "grants" sections into your policy. Keep your existing
+//      "ssh", "tagOwners", "nodeAttrs", etc.
+//   3. Use "Preview rules" to check it, then save.
+{
+	"hosts": {
+		"laptop": "100.64.0.1",
+		"phone":  "100.64.0.2",
+	},
+
+	"grants": [
+		// The laptop only accepts connections from the phone (the app and any other port).
+		{"src": ["phone"], "dst": ["laptop"], "ip": ["*"]},
+
+		// Your devices can still reach the phone.
+		{"src": ["autogroup:member"], "dst": ["phone"], "ip": ["*"]},
+	],
+
+	// Tailscale's default SSH rule; keep whatever you already have.
+	"ssh": [
+		{
+			"action": "check",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+	],
+}

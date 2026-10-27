@@ -1,0 +1,23 @@
+{
+  "name": "claude-remote",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PWA para ver y manejar sesiones de Claude Code (en tmux) desde el celular vía Tailscale",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "icons": "node scripts/make-icons.js",
+    "postinstall": "node scripts/make-icons.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "0.10.0",
+    "@xterm/xterm": "5.5.0",
+    "node-pty": "1.0.0",
+    "web-push": "3.6.7",
+    "ws": "8.21.3"
+  }
+}

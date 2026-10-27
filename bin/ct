@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# ct: abre Claude Code dentro de tmux para poder tomarlo desde el celular.
+#   ct              -> sesión con el nombre de la carpeta; si ya existe, se une a ella
+#   ct -N           -> siempre una sesión nueva (myapp-2, myapp-3, …)
+#   ct -n nombre    -> sesión con ese nombre
+#   ct -- args      -> sesión NUEVA pasando argumentos a claude (p. ej. ct -- --resume)
+# CLAUDE_CMD cambia el comando (puede ser un alias de tu shell): CLAUDE_CMD=claude-work ct
+set -euo pipefail
+name="$(basename "$PWD" | tr -c 'A-Za-z0-9_.\n-' '-')"
+force_new=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -N) force_new=1; shift ;;
+    -n) name="$2"; shift 2 ;;
+    --) shift; force_new=1; break ;;
+    *) break ;;
+  esac
+done
+cmd="${CLAUDE_CMD:-claude}"
+
+# Evita el error típico "ct -- -- continue" / "ct -- continue": claude lo tomaría como un mensaje nuevo.
+for a in "$@"; do
+  case "$a" in
+    continue|resume|c|r|--)
+      echo "ct: «$a» no es una opción de claude. ¿Quisiste decir: ct -- --continue  o  ct -- --resume?" >&2
+      exit 2 ;;
+  esac
+done
+
+if [[ -n "${TMUX:-}" ]]; then exec "$SHELL" -ic "$cmd $(printf '%q ' "$@")"; fi   # ya estamos dentro de tmux
+
+if tmux has-session -t "=$name" 2>/dev/null; then
+  if [[ $force_new -eq 0 ]]; then
+    echo "ct: uniéndome a la sesión «$name» que ya existe (para otra nueva: ct -N)" >&2
+    sleep 1
+    exec tmux attach -t "=$name"
+  fi
+  base="$name"; i=2
+  while tmux has-session -t "=$base-$i" 2>/dev/null; do i=$((i + 1)); done
+  name="$base-$i"
+fi
+# Shell interactivo para que existan tus alias; al salir de claude queda el shell en la misma sesión.
+exec tmux new-session -s "$name" -c "$PWD" "$SHELL" -ilc "$cmd $(printf '%q ' "$@"); exec $SHELL -il"

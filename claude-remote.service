@@ -1,0 +1,29 @@
+# systemd user service (template). Edit the values below, then install with: make install-service
+# Paths use %h (your home directory).
+[Unit]
+Description=claude-remote (PWA to drive Claude Code sessions running in tmux)
+After=network-online.target
+
+[Service]
+# Where you cloned the repo.
+WorkingDirectory=%h/claude-remote
+ExecStart=/usr/bin/env node server.js
+# Make sure `node` (>= 20), `tmux` and your `claude` command are on this PATH.
+# If you use nvm, add e.g. %h/.nvm/versions/node/<version>/bin at the front.
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PORT=7681
+# Who may connect through the tailnet: your Tailscale login and/or the 100.x IPs of your devices
+# (e.g. your phone and this computer). With both empty, all tailnet access is rejected
+# unless ALLOW_ANY_TAILNET=1.
+Environment=ALLOWED_LOGINS=you@example.com
+Environment=ALLOWED_IPS=100.x.y.z,100.a.b.c
+# Commands (or shell aliases) offered by "Nueva"; the first one is the default.
+Environment=CLAUDE_CMDS=claude
+# Folders scanned for git repos in "Nueva" (colon-separated).
+Environment=PROJECT_ROOTS=%h/projects:%h/code
+Restart=on-failure
+# If this service started the tmux server, restarting it must not kill your sessions.
+KillMode=process
+
+[Install]
+WantedBy=default.target
