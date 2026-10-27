@@ -221,6 +221,7 @@ Every Claude Code session running in tmux appears as a card:
   - 🟢 **Libre**: idle, ready for a new prompt.
 - **Meta line**: the tmux target (`session:window.pane`), the working directory, and a 🖥️ monitor icon if the session is also attached in another terminal.
 - **Preview**: the last lines on screen.
+- **No terminal**: if no terminal is attached to the session (for example, you closed the tab without exiting Claude), the card gets a red left bar and a footer explaining it, with two buttons: **Abrir en la laptop** opens a terminal window on the laptop attached to the session (`LAPTOP_TERMINAL`), and **Cerrar** closes it after confirming. The conversation is kept, so you can resume it with `ct -- --resume`.
 
 Tap a card to open it. The list refreshes every 3 seconds while visible; **pull down** to refresh right away.
 With no sessions you get an empty state that explains how to start one. If the server can't be reached, a red banner says so.
@@ -323,6 +324,7 @@ All settings are environment variables. Put them in the systemd unit, or prefix 
 | `CLAUDE_CMDS` | `claude` | Comma-separated commands or shell aliases offered in *Nueva*; the first is the default. Only `[A-Za-z0-9_.-]` names are accepted. |
 | `PROJECT_ROOTS` | `~/projects:~/code:~/src` | Colon-separated folders whose direct children that are git repos are listed in *Nueva*. Missing folders are skipped. |
 | `NOTIFY_ON_STOP` | *(off)* | `1` also sends a push each time Claude finishes and waits for you. |
+| `LAPTOP_TERMINAL` | `gnome-terminal --` | Terminal command used by *Abrir en la laptop*; `tmux attach-session -t <pane>` is appended. E.g. `x-terminal-emulator -e` or `kitty`. |
 | `DATA_DIR` | `./data` | Where VAPID keys (`vapid.json`) and push subscriptions (`subscriptions.json`) are stored. Created with mode 0700 and generated on first run. |
 | `VAPID_SUBJECT` | `mailto:claude-remote@localhost` | Contact URI sent to push services. |
 | `SHELL` | `/bin/bash` | Shell used to start new sessions (as an interactive login shell). |

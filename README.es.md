@@ -220,6 +220,7 @@ Cada sesión de Claude Code que corre en tmux aparece como una tarjeta:
   - 🟢 **Libre**: lista para otro prompt.
 - **Línea de datos**: el destino de tmux (`sesión:ventana.panel`), la carpeta y un ícono de monitor 🖥️ si la sesión también está abierta en otra terminal.
 - **Vista previa**: las últimas líneas de la pantalla.
+- **Sin terminal**: si ninguna terminal tiene abierta la sesión (por ejemplo, cerraste la pestaña sin salir de Claude), la tarjeta lleva una barra roja a la izquierda y una franja que lo explica, con dos botones: **Abrir en la laptop** abre una ventana de terminal en la laptop unida a la sesión (`LAPTOP_TERMINAL`), y **Cerrar** la cierra tras confirmar. La conversación queda guardada y la retomas con `ct -- --resume`.
 
 Toca una tarjeta para abrirla. La lista se actualiza cada 3 segundos mientras está a la vista; **jala hacia abajo** para recargar al instante.
 Sin sesiones aparece un mensaje que explica cómo crear una. Si no hay conexión con el servidor, lo indica un aviso rojo.
@@ -322,6 +323,7 @@ Todo se configura con variables de entorno: en el servicio de systemd, o delante
 | `CLAUDE_CMDS` | `claude` | Comandos o alias que ofrece *Nueva*, separados por coma; el primero es el de por defecto. Solo se aceptan nombres con `[A-Za-z0-9_.-]`. |
 | `PROJECT_ROOTS` | `~/projects:~/code:~/src` | Carpetas (separadas por `:`) cuyos subdirectorios directos con git se listan en *Nueva*. Las que no existen se ignoran. |
 | `NOTIFY_ON_STOP` | *(apagado)* | `1` también avisa cada vez que Claude termina y te espera. |
+| `LAPTOP_TERMINAL` | `gnome-terminal --` | Terminal que usa *Abrir en la laptop*; se le agrega `tmux attach-session -t <panel>`. Ej.: `x-terminal-emulator -e` o `kitty`. |
 | `DATA_DIR` | `./data` | Dónde se guardan las llaves VAPID (`vapid.json`) y las suscripciones push (`subscriptions.json`). Se crea con permisos 0700; las llaves se generan solas la primera vez. |
 | `VAPID_SUBJECT` | `mailto:claude-remote@localhost` | URI de contacto que se envía a los servicios de push. |
 | `SHELL` | `/bin/bash` | Shell con el que se crean las sesiones nuevas (interactivo y de login). |

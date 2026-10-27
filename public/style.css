@@ -84,6 +84,9 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 .card.working { --state: var(--working); }
 .card.idle { --state: var(--idle); }
 .card.idle::before { opacity: .5; }
+/* Sin terminal abierta: barra roja (salvo si espera respuesta, que manda el ámbar). */
+.card.orphan:not(.waiting) { --state: var(--danger); }
+.card.orphan::before { opacity: 1; }
 .card:hover { border-color: var(--line); }
 .card:active { transform: scale(.99); border-color: var(--accent); }
 .card .top { display: flex; align-items: center; gap: 8px; }
@@ -96,6 +99,23 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 .card .meta .tgt .i { color: var(--accent); }
 .card .meta .cwd { display: block !important; flex: 1 1 auto; min-width: 0; }
 .card .meta .att { flex: 0 0 auto; color: var(--text); }
+/* Sesión que ninguna terminal tiene abierta: motivo + botón para cerrarla. */
+.card .orphan {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--line-soft); font-size: 12.5px; line-height: 1.35; color: var(--muted);
+}
+.card .orphan > .i { flex: 0 0 auto; width: 15px; height: 15px; color: var(--waiting); }
+.card .orphan > span { flex: 1; min-width: 0; }
+.card .orphan .acts { flex: 1 0 100%; display: flex; justify-content: flex-end; gap: 8px; }
+.card .orphan .acts button {
+  display: inline-flex; align-items: center; gap: 6px; font: 600 12.5px var(--font); background: none;
+  border-radius: var(--r-sm); padding: 6px 12px; cursor: pointer;
+}
+.card .orphan .acts .i { width: 15px; height: 15px; }
+.card .orphan .open-laptop { color: var(--text); border: 1px solid var(--line); }
+.card .orphan .open-laptop:active { background: var(--raised); }
+.card .orphan .close-pane { color: var(--danger); border: 1px solid rgba(229, 86, 75, .4); }
+.card .orphan .close-pane:active { background: rgba(229, 86, 75, .15); }
 @media (max-width: 480px) { .card .meta .att { font-size: 0; gap: 0; flex: 0 0 auto; } .card .meta .att .i { width: 16px; height: 16px; } }
 .card pre {
   margin: 12px 0 0; padding: 10px 12px; font: 11px/1.45 var(--mono); color: #b5afa5;

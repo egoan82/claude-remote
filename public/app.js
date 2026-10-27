@@ -22,6 +22,7 @@ const ICON = {
   bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   sparkle: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   empty: '<path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
 };
 const icon = (n, c = 'i') => `<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
@@ -38,10 +39,11 @@ async function refresh() {
     $('#status').textContent = '';
     list.sort((a, b) => (a.state === 'waiting' ? -1 : 0) - (b.state === 'waiting' ? -1 : 0) || b.activity - a.activity);
     $('#sessions').innerHTML = list.length ? list.map((s) => `
-      <li class="card ${s.state}" data-pane="${esc(s.pane)}">
+      <li class="card ${s.state}${s.attached ? '' : ' orphan'}"data-pane="${esc(s.pane)}">
         <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${STATE[s.state]}</span></div>
         <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span><span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : ''}</div>
         <pre>${esc(s.preview.join('\n'))}</pre>
+        ${s.attached ? '' : `<div class="orphan">${icon('waiting')}<span>Ninguna terminal la tiene abierta; sigue en segundo plano.</span><div class="acts"><button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button><button class="close-pane" type="button">Cerrar</button></div></div>`}
       </li>`).join('') : `
       <li class="empty">${icon('empty', 'i big')}<strong>No hay sesiones de Claude en tmux</strong><span>Crea una con “Nueva” o lanza <code>ct</code> en la laptop.</span></li>`;
     const waiting = list.filter((s) => s.state === 'waiting').length;
@@ -60,9 +62,20 @@ function showList() {
   pollTimer = setInterval(() => { if (!document.hidden) refresh(); }, 3000);
 }
 
-$('#sessions').addEventListener('click', (e) => {
+$('#sessions').addEventListener('click', async (e) => {
   const card = e.target.closest('.card');
-  if (card) openPane(card.dataset.pane, true);
+  if (!card) return;
+  const pane = encodeURIComponent(card.dataset.pane);
+  if (e.target.closest('.open-laptop')) {
+    try { await api(`/api/panes/${pane}/open`, { method: 'POST' }); } catch (err) { $('#status').textContent = `No se pudo abrir en la laptop: ${err.message}`; }
+    return refresh();
+  }
+  if (!e.target.closest('.close-pane')) return openPane(card.dataset.pane, true);
+  const s = lastSessions.find((x) => x.pane === card.dataset.pane);
+  const aviso = s?.state === 'working' ? '\n\nOjo: está trabajando y se cortará lo que esté haciendo.' : '';
+  if (!confirm(`¿Cerrar la sesión ${s?.target || ''}?\nLa conversación queda guardada (ct -- --resume).${aviso}`)) return;
+  try { await api(`/api/panes/${encodeURIComponent(card.dataset.pane)}`, { method: 'DELETE' }); } catch (err) { $('#status').textContent = `No se pudo cerrar: ${err.message}`; }
+  refresh();
 });
 
 // ---------------- terminal ----------------

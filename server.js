@@ -192,6 +192,18 @@ async function route(req, res) {
     return send(res, 201, { session });
   }
 
+  const del = p.match(/^\/api\/panes\/(%25\d+|%\d+)$/);
+  if (del && req.method === 'DELETE') {
+    await tmux.closePane(decodeURIComponent(del[1]));
+    return send(res, 200, { ok: true });
+  }
+
+  const open = p.match(/^\/api\/panes\/(%25\d+|%\d+)\/open$/);
+  if (open && req.method === 'POST') {
+    await tmux.openOnLaptop(decodeURIComponent(open[1]));
+    return send(res, 200, { ok: true });
+  }
+
   const hist = p.match(/^\/api\/panes\/(%25\d+|%\d+)\/history$/);
   if (hist && req.method === 'GET') {
     const pane = decodeURIComponent(hist[1]);
