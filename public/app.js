@@ -2,7 +2,7 @@
 const $ = (s) => document.querySelector(s);
 const api = async (url, opts = {}) => {
   const res = await fetch(url, { ...opts, headers: { 'content-type': 'application/json', ...(opts.headers || {}) } });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+  if (!res.ok) throw Object.assign(new Error((await res.json().catch(() => ({}))).error || res.statusText), { status: res.status });
   return res.headers.get('content-type')?.includes('json') ? res.json() : res.text();
 };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -28,6 +28,15 @@ const ICON = {
 const icon = (n, c = 'i') => `<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
 const store = { get: (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 
+// Explica en claro por qué falló la lista (fetch solo dice «Failed to fetch» / «Load failed»).
+function connError(err) {
+  if (navigator.onLine === false) return 'Tu celular no tiene internet. Reintentando…';
+  if (!err.status) return 'No hay conexión con la laptop: revisa que esté encendida y que Tailscale esté activo. Reintentando…';
+  if (err.status >= 502 && err.status <= 504) return 'La laptop responde, pero el servicio claude-remote no. En la laptop: systemctl --user restart claude-remote';
+  if (err.status === 403) return 'Este dispositivo no tiene permiso (revisa ALLOWED_LOGINS / ALLOWED_IPS en el servicio).';
+  return `Error del servidor: ${err.message}`;
+}
+
 // ---------------- lista ----------------
 let pollTimer = null;
 let lastSessions = [];
@@ -49,7 +58,7 @@ async function refresh() {
     const waiting = list.filter((s) => s.state === 'waiting').length;
     document.title = waiting ? `(${waiting}) Claude Remote` : 'Claude Remote';
   } catch (err) {
-    $('#status').textContent = `Sin conexión con la laptop: ${err.message}`;
+    $('#status').textContent = connError(err);
   }
 }
 

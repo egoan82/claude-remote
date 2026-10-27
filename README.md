@@ -365,6 +365,15 @@ Found a security issue? Please open a private security advisory on the repositor
 ## Troubleshooting / FAQ
 
 <details>
+<summary><b>"No hay conexión con la laptop" when opening the app</b></summary>
+
+The phone can't reach the server. The app caches a help page the first time you open it with the laptop on, and shows it
+whenever the laptop is unreachable (or Tailscale answers 502/503/504 because the service is down). Check that the laptop is
+awake, that Tailscale is on in both devices, and that the service runs (`systemctl --user restart claude-remote`).
+The page retries every 5 seconds and loads the app as soon as the laptop answers.
+</details>
+
+<details>
 <summary><b>The list is empty, but Claude is running</b></summary>
 
 Only sessions **inside tmux** are detected, and the process must be named `claude`. Start Claude with `ct`,

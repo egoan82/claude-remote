@@ -364,6 +364,15 @@ Qué lo protege:
 ## Problemas frecuentes
 
 <details>
+<summary><b>"No hay conexión con la laptop" al abrir la app</b></summary>
+
+El celular no llega al servidor. La app guarda una página de ayuda la primera vez que la abres con la laptop encendida, y
+la muestra cuando no se puede llegar a la laptop (o Tailscale responde 502/503/504 porque el servicio está caído). Revisa que
+la laptop esté despierta, que Tailscale esté activo en ambos dispositivos y que el servicio corra
+(`systemctl --user restart claude-remote`). La página reintenta cada 5 segundos y carga la app en cuanto la laptop responde.
+</details>
+
+<details>
 <summary><b>La lista está vacía, pero Claude está corriendo</b></summary>
 
 Solo se detectan las sesiones **dentro de tmux**, y el proceso debe llamarse `claude`. Abre Claude con `ct`

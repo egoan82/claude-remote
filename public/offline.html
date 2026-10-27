@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <title>Claude Remote · Sin conexión</title>
+  <!-- La guarda el service worker y se muestra cuando no se puede llegar a la laptop: todo va en línea. -->
+  <style>
+    :root { --bg: #111111; --panel: #1c1c1c; --raised: #242424; --line: #2e2e2e; --text: #f2efe9; --muted: #9a948b;
+      --accent: #ff7a45; --on-accent: #1f0d04; --danger: #e5564b; --font: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: calc(24px + env(safe-area-inset-top)) 16px 24px;
+      background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); }
+    main { width: 100%; max-width: 420px; }
+    .ico { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 16px; background: rgba(229, 86, 75, .1);
+      border: 1px solid rgba(229, 86, 75, .35); color: var(--danger); margin-bottom: 18px; }
+    svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    h1 { margin: 0 0 6px; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+    p { margin: 0; color: var(--muted); }
+    ol { margin: 20px 0 0; padding: 0; list-style: none; counter-reset: n; display: grid; gap: 10px; }
+    li { counter-increment: n; position: relative; padding: 12px 14px 12px 46px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+    li::before { content: counter(n); position: absolute; left: 14px; top: 12px; width: 22px; height: 22px; display: grid; place-items: center;
+      font-size: 12.5px; font-weight: 600; color: var(--accent); background: var(--raised); border-radius: 99px; }
+    li strong { display: block; font-weight: 600; }
+    li span { color: var(--muted); font-size: 13.5px; }
+    code { font-family: var(--mono); font-size: 12px; color: var(--text); background: var(--raised); padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+    button { margin-top: 22px; width: 100%; padding: 13px; font: 600 15px var(--font); color: var(--on-accent); background: var(--accent);
+      border: 0; border-radius: 12px; cursor: pointer; }
+    button:active { transform: scale(.99); }
+    .auto { margin-top: 10px; text-align: center; font-size: 13px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg></div>
+
+    <div id="no-internet" hidden>
+      <h1>Tu celular no tiene internet</h1>
+      <p>Conéctate a wifi o datos y vuelve a intentar.</p>
+    </div>
+
+    <div id="no-laptop">
+      <h1>No hay conexión con la laptop</h1>
+      <p>Claude Remote corre en tu laptop, así que necesita llegar a ella. Revisa:</p>
+      <ol>
+        <li><strong>La laptop está encendida y despierta</strong><span>Si está suspendida o con la tapa cerrada, no responde.</span></li>
+        <li><strong>Tailscale está activo</strong><span>En el celular y en la laptop, con la misma cuenta.</span></li>
+        <li><strong>El servicio está corriendo</strong><span>En la laptop:<br><code>systemctl --user restart claude-remote</code></span></li>
+      </ol>
+    </div>
+
+    <button id="retry" type="button">Reintentar</button>
+    <p class="auto" id="auto">Reintentando solo cada 5 segundos…</p>
+  </main>
+  <script>
+    // Si se puede llegar al servidor, recarga la app; si no, sigue mostrando esta página.
+    const show = () => {
+      const off = navigator.onLine === false;
+      document.getElementById('no-internet').hidden = !off;
+      document.getElementById('no-laptop').hidden = off;
+    };
+    let busy = false;
+    async function check() {
+      show();
+      if (busy) return;
+      busy = true;
+      try {
+        const r = await fetch('/manifest.webmanifest', { cache: 'no-store' });
+        if (r.ok) location.reload();
+      } catch { /* sigue sin conexión */ }
+      busy = false;
+    }
+    document.getElementById('retry').addEventListener('click', check);
+    addEventListener('online', check);
+    addEventListener('offline', show);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    setInterval(() => { if (!document.hidden) check(); }, 5000);
+    show();
+  </script>
+</body>
+</html>
