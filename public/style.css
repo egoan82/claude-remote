@@ -375,3 +375,10 @@ dialog[open] { animation: rise .2s ease-out; }
 #help-body .keycap.stop { color: var(--danger); border-color: rgba(229, 86, 75, .4); }
 #help-body .keycap.stop .i { fill: currentColor; }
 #help-body .keycap.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+#snippet-search-wrap { position: relative; padding: 0 12px 4px; }
+#snippet-search-wrap .i { position: absolute; left: 25px; top: calc(50% - 2px); transform: translateY(-50%); width: 17px; height: 17px; color: var(--dim); pointer-events: none; }
+#snippet-search {
+  width: 100%; font: 15px var(--font); min-height: 42px; padding: 8px 12px 8px 38px; border-radius: var(--r-sm);
+  border: 1px solid var(--line); background: var(--bg); color: var(--text);
+}
+#snippet-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 122, 69, .18); }

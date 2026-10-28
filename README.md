@@ -269,7 +269,7 @@ Multi-line prompts are sent as a bracketed paste. **Ctrl/⌘+Enter** sends from 
 **📎 Attach image**: pick an image (png, jpg, gif, webp, up to 20 MB). Large photos are resized to 2000 px and re-encoded as JPEG on the phone.
 The file is saved on the computer in `$TMPDIR/claude-remote-uploads/` (mode 0700, deleted after a day) and its path is pasted into the prompt.
 
-**🔖 Saved commands**: the bookmark button next to the prompt box opens your saved commands. Tap one to insert it into the box (to review it first), or ▶ to send it right away; edit or delete them there too. Whatever is already typed in the box is pre-filled so you can save it. They are stored on the computer in `data/snippets.json`, so every device sees the same list.
+**🔖 Saved commands**: the bookmark button next to the prompt box opens your saved commands. Tap one to insert it into the box (to review it first), or ▶ to send it right away; edit or delete them there too. A search box at the top filters them by name or text (accents and case ignored). Whatever is already typed in the box is pre-filled so you can save it. They are stored on the computer in `data/snippets.json`, so every device sees the same list.
 
 <br clear="right">
 

@@ -268,7 +268,7 @@ Los prompts de varias líneas se mandan como pegado. **Ctrl/⌘+Enter** envía d
 **📎 Adjuntar imagen**: elige una imagen (png, jpg, gif o webp, hasta 20 MB). Las fotos grandes se achican a 2000 px y se recodifican como JPEG en el celular.
 Se guardan en la computadora en `$TMPDIR/claude-remote-uploads/` (permisos 0700; se borran al día) y su ruta se pega en el prompt.
 
-**🔖 Comandos guardados**: el botón del marcador junto a la caja de texto abre tus comandos. Toca uno para insertarlo en la caja (y revisarlo antes) o ▶ para enviarlo directo; ahí mismo se editan o borran. Lo que ya tengas escrito en la caja aparece listo para guardarlo. Se guardan en la computadora en `data/snippets.json`, así todos los dispositivos ven la misma lista.
+**🔖 Comandos guardados**: el botón del marcador junto a la caja de texto abre tus comandos. Toca uno para insertarlo en la caja (y revisarlo antes) o ▶ para enviarlo directo; ahí mismo se editan o borran. Arriba hay un buscador que filtra por nombre o texto (sin importar tildes ni mayúsculas). Lo que ya tengas escrito en la caja aparece listo para guardarlo. Se guardan en la computadora en `data/snippets.json`, así todos los dispositivos ven la misma lista.
 
 <br clear="right">
 

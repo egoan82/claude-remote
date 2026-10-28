@@ -228,8 +228,13 @@ $('#btn-close-help').addEventListener('click', () => $('#help').close());
 // Tocar uno lo inserta en el cuadro de texto (para revisarlo antes); ▶ lo envía directo.
 let snippetItems = [];
 
+// Filtra por todas las palabras escritas en el nombre o el texto (sin importar tildes ni mayúsculas).
 function renderSnippets() {
-  $('#snippet-list').innerHTML = snippetItems.length ? snippetItems.map((x) => `
+  const terms = fold($('#snippet-search').value.trim()).split(/\s+/).filter(Boolean);
+  const shown = snippetItems.filter((x) => { const hay = fold(`${x.name} ${x.text}`); return terms.every((t) => hay.includes(t)); });
+  $('#snippet-search-wrap').classList.toggle('hidden', !snippetItems.length);
+  $('#snippet-list').innerHTML = !snippetItems.length ? '<li class="more">Aún no hay comandos. Escribe uno abajo y guárdalo.</li>'
+    : !shown.length ? '<li class="more">Ningún comando coincide con la búsqueda.</li>' : shown.map((x) => `
     <li data-id="${esc(x.id)}">
       <button type="button" class="snip-insert" title="Insertar">${x.name ? `<b>${esc(x.name)}</b>` : ''}<code>${esc(x.text)}</code></button>
       <div class="snip-acts">
@@ -237,7 +242,7 @@ function renderSnippets() {
         <button type="button" class="ghost icon snip-edit" title="Editar" aria-label="Editar">${icon('pencil')}</button>
         <button type="button" class="ghost icon snip-del" title="Borrar" aria-label="Borrar">${icon('trash')}</button>
       </div>
-    </li>`).join('') : '<li class="more">Aún no hay comandos. Escribe uno abajo y guárdalo.</li>';
+    </li>`).join('');
 }
 
 function editSnippet(x) {
@@ -256,11 +261,13 @@ function sendText(text) {
 $('#btn-snippets').addEventListener('click', async () => {
   // Lo que ya está escrito queda listo para guardarlo.
   editSnippet({ text: $('#prompt-text').value });
+  $('#snippet-search').value = '';
   $('#snippets').showModal();
   try { snippetItems = await api('/api/snippets'); } catch (err) { snippetItems = []; $('#snippet-list').innerHTML = `<li class="more">${esc(err.message)}</li>`; return; }
   renderSnippets();
 });
 $('#btn-close-snippets').addEventListener('click', () => $('#snippets').close());
+$('#snippet-search').addEventListener('input', renderSnippets);
 $('#btn-snippet-cancel').addEventListener('click', () => editSnippet(null));
 $('#snippet-list').addEventListener('click', async (e) => {
   const li = e.target.closest('li[data-id]');
