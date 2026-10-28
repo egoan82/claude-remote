@@ -57,7 +57,7 @@ El servidor es un solo proceso de Node.js (sin frameworks ni paso de compilació
 |---|---|
 | 🗂️ **Lista de sesiones con estado en vivo** | Encuentra cada panel de tmux en cuyo árbol de procesos corre `claude` y lo muestra como tarjeta. El estado es **Espera respuesta** (ámbar y pulsando), **Trabajando** (naranja, girando) o **Libre** (verde), junto a las últimas líneas de la pantalla. Las que esperan respuesta salen primero y el título de la pestaña dice cuántas hay. Se actualiza cada 3 s; jala hacia abajo para recargar al instante. |
 | 🖥️ **Terminal en vivo** | Abre la sesión real de tmux en [xterm.js](https://xtermjs.org) por WebSocket. Es la misma sesión que ves en la computadora, no una copia. |
-| ⌨️ **Teclas especiales + Detener** | Un teclado de dos filas: `1` `2` `3` para responder menús, `Esc`, `Tab`, `⇧Tab` para cambiar de modo, `↑` `↓`, `⏎`, tamaño de letra `A−`/`A+` y un botón rojo **Detener** que manda **Ctrl+C**. |
+| ⌨️ **Teclas especiales + Detener** | Un teclado de dos filas con etiquetas de texto: `1` `2` `3` para responder menús, `Esc`, `Tab`, `⇧Tab` para cambiar de modo, `←` `↑` `↓` `→`, `Enter`, tamaño de letra `A−`/`A+` y un botón rojo **Detener** que manda **Ctrl+C**. |
 | ✍️ **Caja de prompt** | Para escribir prompts largos con comodidad. El texto de varias líneas se manda como "pegado" (bracketed paste) para que los saltos de línea no lo envíen antes de tiempo. **Ctrl/⌘+Enter** envía. |
 | 📎 **Adjuntar imágenes** | Elige una foto o captura. Se achica a 2000 px como máximo en el celular, se sube a tu computadora y su ruta se pega en Claude, que la adjunta como `[Image #N]`. |
 | 💬 **Historial tipo chat** | Lee la transcripción de Claude Code (`.jsonl`) y la muestra como chat: tus mensajes, las respuestas de Claude con Markdown y bloques de código, y las herramientas agrupadas en filas plegables. Si no encuentra la transcripción, muestra el scrollback de tmux. |
@@ -254,11 +254,14 @@ La sesión real de tmux, en vivo. La barra muestra el nombre, un indicador de **
 | **Detener** | `Ctrl+C` | Interrumpir / detener a Claude |
 | `1` `2` `3` | el número | Responder menús numerados ("1. Yes / 2. … / 3. No") |
 | `A−` `A+` | — | Tamaño de letra de la terminal (se recuerda en el dispositivo) |
-| ⎋ **Esc** | `Esc` | Cancelar / volver en la interfaz de Claude |
-| ⇥ **Tab** | `Tab` | Autocompletar |
-| ⇤ **⇧Tab** | `Shift+Tab` | Cambiar de modo (p. ej. aceptar ediciones / modo plan) |
+| **Esc** | `Esc` | Cancelar / volver en la interfaz de Claude |
+| **Tab** | `Tab` | Autocompletar |
+| **⇧Tab** | `Shift+Tab` | Cambiar de modo (p. ej. aceptar ediciones / modo plan) |
 | ↑ ↓ | flechas | Moverse por menús y por el historial de prompts |
+| ← → | flechas | Mover el cursor dentro de lo que estás escribiendo |
 | ↵ **Enter** | `Enter` | Confirmar |
+
+El botón **?** de la barra superior lista cada tecla y botón con su icono y lo que hace.
 
 Las teclas no le quitan el foco a la caja de texto, así que el teclado del celular no se cierra.
 

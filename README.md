@@ -58,7 +58,7 @@ The server is a single Node.js process (no framework, no build step) bound to `1
 |---|---|
 | 🗂️ **Session list with live status** | Finds every tmux pane whose process tree runs `claude` and shows it as a card. The status is **Espera respuesta** (waiting for you, amber and pulsing), **Trabajando** (working, orange spinner) or **Libre** (idle, green), next to the last lines on screen. Sessions waiting for you are sorted first, and the tab title shows how many there are. The list refreshes every 3 s; pull down to refresh it right away. |
 | 🖥️ **Live terminal** | Opens the real tmux session in [xterm.js](https://xtermjs.org) over a WebSocket. It's the same session you see on your computer, not a copy. |
-| ⌨️ **Special keys + Detener** | A two-row key pad: `1` `2` `3` to answer menus, `Esc`, `Tab`, `⇧Tab` to switch modes, `↑` `↓`, `⏎`, font size `A−`/`A+`, and a red **Detener** button that sends **Ctrl+C**. |
+| ⌨️ **Special keys + Detener** | A two-row key pad with plain-text labels: `1` `2` `3` to answer menus, `Esc`, `Tab`, `⇧Tab` to switch modes, `←` `↑` `↓` `→`, `Enter`, font size `A−`/`A+`, and a red **Detener** button that sends **Ctrl+C**. |
 | ✍️ **Prompt box** | Write long prompts comfortably. Multi-line text is sent as a bracketed paste, so line breaks don't submit early. **Ctrl/⌘+Enter** sends. |
 | 📎 **Attach images** | Pick a photo or screenshot. It is shrunk to a 2000 px maximum on the phone, uploaded to your computer, and its path is pasted into Claude, which attaches it as `[Image #N]`. |
 | 💬 **Chat-style history** | Reads the session's Claude Code transcript (`.jsonl`) and shows it as a chat: your messages, Claude's answers with Markdown and code blocks, and tool calls grouped into collapsible rows. If no transcript is found, it falls back to the tmux scrollback. |
@@ -255,11 +255,14 @@ The real tmux session, live. The header shows the session name, a **connection**
 | **Detener** | `Ctrl+C` | Interrupt / stop Claude |
 | `1` `2` `3` | the digit | Answer numbered menus ("1. Yes / 2. … / 3. No") |
 | `A−` `A+` | — | Terminal font size (remembered on the device) |
-| ⎋ **Esc** | `Esc` | Cancel / go back in Claude's UI |
-| ⇥ **Tab** | `Tab` | Autocomplete |
-| ⇤ **⇧Tab** | `Shift+Tab` | Cycle modes (e.g. auto-accept edits / plan mode) |
+| **Esc** | `Esc` | Cancel / go back in Claude's UI |
+| **Tab** | `Tab` | Autocomplete |
+| **⇧Tab** | `Shift+Tab` | Cycle modes (e.g. auto-accept edits / plan mode) |
 | ↑ ↓ | arrow keys | Move through menus and prompt history |
+| ← → | arrow keys | Move the cursor inside what you are typing |
 | ↵ **Enter** | `Enter` | Confirm |
+
+The **?** button in the header lists every key and button with its icon and what it does.
 
 The keys never steal focus, so the phone keyboard stays open.
 

@@ -163,7 +163,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Teclas rápidas. pointerdown + preventDefault evita que se cierre el teclado del celular.
-const KEYS = { 1: '1', 2: '2', 3: '3', esc: '\x1b', tab: '\t', stab: '\x1b[Z', up: '\x1b[A', down: '\x1b[B', enter: '\r', ctrlc: '\x03' };
+const KEYS = { 1: '1', 2: '2', 3: '3', esc: '\x1b', tab: '\t', stab: '\x1b[Z', up: '\x1b[A', down: '\x1b[B', left: '\x1b[D', right: '\x1b[C', enter: '\r', ctrlc: '\x03' };
 $('#keys').addEventListener('pointerdown', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
@@ -198,10 +198,12 @@ const HELP_KEYS = [
   ['2', 'Opción 2', 'Elige la segunda opción (p. ej. «Sí, y no volver a preguntar»).'],
   ['3', 'Opción 3', 'Elige la tercera opción (normalmente «No» o decirle otra cosa).'],
   ['esc', 'Esc', 'Cancela o cierra un menú. Con Claude trabajando, lo detiene; dos veces seguidas permite volver a un mensaje anterior.'],
-  ['tab', 'Tab', 'Autocompleta rutas y comandos.'],
+  ['tab', 'Tab', 'Autocompleta rutas, comandos y, en Claude, archivos tras @.'],
   ['stab', 'Mayús+Tab', 'En Claude cambia de modo: normal, aceptar ediciones, plan y auto.'],
   ['up', 'Arriba', 'Sube en un menú o trae el mensaje/comando anterior.'],
   ['down', 'Abajo', 'Baja en un menú o avanza en el historial.'],
+  ['left', 'Izquierda', 'Mueve el cursor a la izquierda dentro de lo que estás escribiendo en la terminal.'],
+  ['right', 'Derecha', 'Mueve el cursor a la derecha dentro de lo que estás escribiendo en la terminal.'],
   ['enter', 'Enter', 'Confirma la opción marcada o envía un Enter suelto.'],
   ['font-', 'Letra más pequeña', 'Achica el texto de la terminal (se recuerda).'],
   ['font+', 'Letra más grande', 'Agranda el texto de la terminal (se recuerda).'],
