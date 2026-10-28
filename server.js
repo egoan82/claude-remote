@@ -10,6 +10,7 @@ import pty from 'node-pty';
 import * as tmux from './lib/tmux.js';
 import * as push from './lib/push.js';
 import * as transcript from './lib/transcript.js';
+import * as snippets from './lib/snippets.js';
 
 const ROOT = path.dirname(new URL(import.meta.url).pathname);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -183,12 +184,12 @@ async function route(req, res) {
   }
 
   if (p === '/api/sessions' && req.method === 'POST') {
-    const { dir, name, cmd = CLAUDE_CMDS[0] } = await readJson(req);
-    if (!CLAUDE_CMDS.includes(cmd)) return send(res, 400, { error: 'comando no permitido' });
+    const { dir, name, cmd = CLAUDE_CMDS[0], terminal = false } = await readJson(req);
+    if (!terminal && !CLAUDE_CMDS.includes(cmd)) return send(res, 400, { error: 'comando no permitido' });
     const real = fs.realpathSync(String(dir || '').replace(/^~/, os.homedir()));
     if (!fs.statSync(real).isDirectory()) return send(res, 400, { error: 'no es una carpeta' });
     if (name && !tmux.SESSION_NAME.test(name)) return send(res, 400, { error: 'nombre inválido' });
-    const session = await tmux.newSession(real, name, cmd);
+    const session = await tmux.newSession(real, name, terminal ? null : cmd);
     return send(res, 201, { session });
   }
 
@@ -218,6 +219,12 @@ async function route(req, res) {
   }
 
   if (p === '/api/upload' && req.method === 'POST') return send(res, 201, { path: await saveImage(req) });
+
+  // Comandos guardados para insertar en el cuadro de texto.
+  if (p === '/api/snippets' && req.method === 'GET') return send(res, 200, snippets.list());
+  if (p === '/api/snippets' && req.method === 'POST') return send(res, 201, snippets.save(await readJson(req)));
+  const snip = p.match(/^\/api\/snippets\/([\w-]{1,40})$/);
+  if (snip && req.method === 'DELETE') { snippets.remove(snip[1]); return send(res, 200, { ok: true }); }
 
   if (p === '/api/projects') return send(res, 200, listProjects());
   if (p === '/api/commands') return send(res, 200, CLAUDE_CMDS);

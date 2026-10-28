@@ -32,6 +32,7 @@
       <button id="btn-back" class="ghost icon" aria-label="Volver"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
       <h1 id="term-title"></h1>
       <span id="conn" class="dot" role="img" aria-label="Conexión"><svg class="i wifi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg><svg class="i wifi-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg></span>
+      <button id="btn-help" class="ghost icon" title="Ayuda de las teclas" aria-label="Ayuda de las teclas"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
       <button id="btn-history" class="ghost icon" title="Historial" aria-label="Historial"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></button>
     </header>
     <div id="term"></div>
@@ -41,6 +42,7 @@
     <form id="prompt">
       <button type="button" id="btn-image" class="ghost icon" title="Adjuntar imagen" aria-label="Adjuntar imagen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
       <input type="file" id="image-file" accept="image/*" hidden>
+      <button type="button" id="btn-snippets" class="ghost icon" title="Comandos guardados" aria-label="Comandos guardados"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg></button>
       <textarea id="prompt-text" rows="1" placeholder="Escribe a Claude…" autocomplete="off"></textarea>
       <button class="primary send" type="submit" aria-label="Enviar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg><span>Enviar</span></button>
     </form>
@@ -58,6 +60,30 @@
       <div id="history-chat" class="hidden"></div>
     </div>
     <button id="btn-history-end" class="hidden" aria-label="Ir al final"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>Ir al final</button>
+  </dialog>
+
+  <!-- Ayuda de las teclas -->
+  <dialog id="help">
+    <header class="bar">
+      <h1><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span>Qué hace cada tecla</span></h1>
+      <button class="ghost icon" id="btn-close-help" aria-label="Cerrar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </header>
+    <div id="help-body"></div>
+  </dialog>
+
+  <!-- Comandos guardados -->
+  <dialog id="snippets">
+    <header class="bar">
+      <h1><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><span>Comandos</span></h1>
+      <button class="ghost icon" id="btn-close-snippets" aria-label="Cerrar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </header>
+    <ul id="snippet-list"></ul>
+    <form id="snippet-form">
+      <input id="snippet-id" type="hidden">
+      <input id="snippet-name" maxlength="60" placeholder="Nombre (opcional)" autocomplete="off">
+      <textarea id="snippet-text" rows="2" maxlength="4000" placeholder="Comando o texto a guardar…" autocomplete="off" spellcheck="false"></textarea>
+      <div class="row"><button type="button" class="ghost hidden" id="btn-snippet-cancel">Cancelar</button><button class="primary" id="btn-snippet-save"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Guardar</span></button></div>
+    </form>
   </dialog>
 
   <!-- Nueva sesión -->

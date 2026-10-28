@@ -319,3 +319,59 @@ dialog[open] { animation: rise .2s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Terminal sin Claude */
+.card.term { --state: var(--muted); }
+.card.term .orphan > .i { color: var(--muted); }
+.badge.term { color: var(--text); background: var(--raised); }
+
+/* Comandos guardados */
+#btn-snippets { height: 46px; }
+#snippets { display: none; flex-direction: column; }
+#snippets[open] { display: flex; }
+#snippets .bar h1 { display: flex; align-items: center; gap: 8px; flex: 1; font-size: 17px; margin: 0; }
+#snippets .bar h1 .i { width: 18px; height: 18px; color: var(--accent); }
+#snippet-list { list-style: none; margin: 0; padding: 4px 12px; overflow-y: auto; flex: 1 1 auto; max-height: 50dvh; }
+#snippet-list li[data-id] { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line-soft); }
+#snippet-list .snip-insert {
+  flex: 1; min-width: 0; display: grid; gap: 3px; justify-content: start; justify-items: start; text-align: left; background: none; border: 0; color: var(--text);
+  padding: 10px 4px; cursor: pointer; font: 500 14px var(--font); border-radius: var(--r-sm);
+}
+#snippet-list .snip-insert:active { background: var(--raised); }
+#snippet-list .snip-insert code { font: 12.5px var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+#snippet-list .snip-insert b + code { color: var(--muted); }
+#snippet-list .snip-insert b:only-child, #snippet-list .snip-insert code:only-child { color: var(--text); }
+#snippet-list .snip-acts { display: flex; flex: 0 0 auto; }
+#snippet-list .snip-acts .i { width: 17px; height: 17px; }
+#snippet-list .snip-send .i { color: var(--accent); }
+#snippet-list .snip-del .i { color: var(--danger); }
+#snippet-list .more { padding: 14px 4px; font-size: 13px; color: var(--muted); }
+#snippet-form { display: grid; gap: 8px; padding: 12px; border-top: 1px solid var(--line-soft); }
+#snippet-form input, #snippet-form textarea {
+  font: 15px var(--font); padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); width: 100%; resize: vertical;
+}
+#snippet-form textarea { font-family: var(--mono); font-size: 14px; min-height: 64px; }
+#snippet-form input:focus, #snippet-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 122, 69, .18); }
+
+/* Ayuda de las teclas */
+#help { display: none; flex-direction: column; }
+#help[open] { display: flex; }
+#help .bar h1 { display: flex; align-items: center; gap: 8px; flex: 1; font-size: 17px; margin: 0; }
+#help .bar h1 .i { width: 18px; height: 18px; color: var(--accent); }
+#help-body { overflow-y: auto; padding: 0 16px 16px; }
+#help-body h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 6px; }
+#help-body ul { list-style: none; margin: 0; padding: 0; }
+#help-body li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+#help-body li:last-child { border-bottom: 0; }
+#help-body li > div { display: grid; gap: 2px; min-width: 0; }
+#help-body li b { font-size: 14px; font-weight: 600; }
+#help-body li > div > span { font-size: 13px; line-height: 1.4; color: var(--muted); }
+#help-body .keycap {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 44px; height: 40px; padding: 0 8px;
+  border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line); font: 600 15px var(--font); color: var(--text);
+}
+#help-body .keycap .i { width: 18px; height: 18px; }
+#help-body .keycap.stop { color: var(--danger); border-color: rgba(229, 86, 75, .4); }
+#help-body .keycap.stop .i { fill: currentColor; }
+#help-body .keycap.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }

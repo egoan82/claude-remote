@@ -6,7 +6,7 @@ const api = async (url, opts = {}) => {
   return res.headers.get('content-type')?.includes('json') ? res.json() : res.text();
 };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const STATE = { waiting: 'Espera respuesta', working: 'Trabajando', idle: 'Libre', ended: 'Claude terminó' };
+const STATE = { waiting: 'Espera respuesta', working: 'Trabajando', idle: 'Libre', ended: 'Claude terminó', term: 'Terminal' };
 // Iconos (trazos estilo Lucide) para las plantillas de abajo.
 const ICON = {
   folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
@@ -24,6 +24,9 @@ const ICON = {
   sparkle: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  play: '<path d="M6 3 20 12 6 21Z"/>',
+  pencil: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   empty: '<path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
 };
 const icon = (n, c = 'i') => `<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
@@ -49,11 +52,12 @@ async function refresh() {
     $('#status').textContent = '';
     list.sort((a, b) => (a.state === 'waiting' ? -1 : 0) - (b.state === 'waiting' ? -1 : 0) || b.activity - a.activity);
     $('#sessions').innerHTML = list.length ? list.map((s) => `
-      <li class="card ${s.state}${s.attached ? '' : ' orphan'}"data-pane="${esc(s.pane)}">
+      <li class="card ${s.state}${s.attached || s.state === 'term' ? '' : ' orphan'}" data-pane="${esc(s.pane)}">
         <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${STATE[s.state]}</span></div>
         <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span><span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : ''}</div>
         <pre>${esc(s.preview.join('\n'))}</pre>
-        ${s.state === 'ended' ? `<div class="orphan">${icon('ended')}<span>${s.attached ? 'Claude ya salió y queda el shell abierto en una terminal de la laptop; al cerrarlo se cierra esa terminal.' : 'Claude ya salió y solo queda el shell, sin terminal abierta.'}</span><div class="acts"><button class="close-pane" type="button">Cerrar</button></div></div>`
+        ${s.state === 'term' ? `<div class="orphan">${icon('term')}<span>Terminal sin Claude${s.attached ? ', abierta también en la laptop' : ''}.</span><div class="acts">${s.attached ? '' : `<button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button>`}<button class="close-pane" type="button">Cerrar</button></div></div>`
+          : s.state === 'ended' ? `<div class="orphan">${icon('ended')}<span>${s.attached ? 'Claude ya salió y queda el shell abierto en una terminal de la laptop; al cerrarlo se cierra esa terminal.' : 'Claude ya salió y solo queda el shell, sin terminal abierta.'}</span><div class="acts"><button class="close-pane" type="button">Cerrar</button></div></div>`
           : s.attached ? '' : `<div class="orphan">${icon('waiting')}<span>Ninguna terminal la tiene abierta; sigue en segundo plano.</span><div class="acts"><button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button><button class="close-pane" type="button">Cerrar</button></div></div>`}
       </li>`).join('') : `
       <li class="empty">${icon('empty', 'i big')}<strong>No hay sesiones de Claude en tmux</strong><span>Crea una con “Nueva” o lanza <code>ct</code> en la laptop.</span></li>`;
@@ -83,8 +87,9 @@ $('#sessions').addEventListener('click', async (e) => {
   }
   if (!e.target.closest('.close-pane')) return openPane(card.dataset.pane, true);
   const s = lastSessions.find((x) => x.pane === card.dataset.pane);
-  const aviso = s?.state === 'ended' ? '\n\nClaude ya terminó; solo se cierra el shell que quedó.' : s?.state === 'working' ? '\n\nOjo: está trabajando y se cortará lo que esté haciendo.' : '';
-  if (!confirm(`¿Cerrar la sesión ${s?.target || ''}?\nLa conversación queda guardada (ct -- --resume).${aviso}`)) return;
+  const aviso = s?.state === 'term' ? '\n\nEs una terminal: se corta lo que esté corriendo en ella.' : s?.state === 'ended' ? '\n\nClaude ya terminó; solo se cierra el shell que quedó.' : s?.state === 'working' ? '\n\nOjo: está trabajando y se cortará lo que esté haciendo.' : '';
+  const guardada = s?.state === 'term' ? '' : '\nLa conversación queda guardada (ct -- --resume).';
+  if (!confirm(`¿Cerrar la sesión ${s?.target || ''}?${guardada}${aviso}`)) return;
   try { await api(`/api/panes/${encodeURIComponent(card.dataset.pane)}`, { method: 'DELETE' }); } catch (err) { $('#status').textContent = `No se pudo cerrar: ${err.message}`; }
   refresh();
 });
@@ -134,6 +139,7 @@ function openPane(pane, push) {
   clearInterval(pollTimer);
   const s = lastSessions.find((x) => x.pane === pane);
   $('#term-title').textContent = s ? `${s.title || s.project} · ${s.session}` : pane;
+  $('#prompt-text').placeholder = s?.state === 'term' || s?.state === 'ended' ? 'Escribe un comando…' : 'Escribe a Claude…';
   $('#list-view').classList.add('hidden');
   $('#term-view').classList.remove('hidden');
   if (push) history.pushState({ pane }, '', `?pane=${encodeURIComponent(pane)}`);
@@ -176,13 +182,118 @@ $('#prompt').addEventListener('submit', (e) => {
   const ta = $('#prompt-text');
   const text = ta.value;
   if (!text.trim()) { sendInput('\r'); return; }
-  sendInput(text.includes('\n') ? `\x1b[200~${text}\x1b[201~` : text);
-  setTimeout(() => sendInput('\r'), 120);
+  sendText(text);
   ta.value = ''; ta.style.height = '';
 });
 $('#prompt-text').addEventListener('input', (e) => { const t = e.target; t.style.height = ''; t.style.height = `${t.scrollHeight}px`; });
 $('#prompt-text').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('#prompt').requestSubmit(); }
+});
+
+// ---------------- ayuda de las teclas ----------------
+// El icono de cada fila se copia del botón real, así la ayuda siempre coincide con la barra.
+const HELP_KEYS = [
+  ['ctrlc', 'Detener', 'Interrumpe lo que esté haciendo Claude o el comando que corre (Ctrl+C). Dos veces seguidas con Claude libre lo cierra.'],
+  ['1', 'Opción 1', 'Elige la primera opción cuando Claude pregunta (p. ej. «Sí» al pedir permiso).'],
+  ['2', 'Opción 2', 'Elige la segunda opción (p. ej. «Sí, y no volver a preguntar»).'],
+  ['3', 'Opción 3', 'Elige la tercera opción (normalmente «No» o decirle otra cosa).'],
+  ['esc', 'Esc', 'Cancela o cierra un menú. Con Claude trabajando, lo detiene; dos veces seguidas permite volver a un mensaje anterior.'],
+  ['tab', 'Tab', 'Autocompleta rutas y comandos.'],
+  ['stab', 'Mayús+Tab', 'En Claude cambia de modo: normal, aceptar ediciones, plan y auto.'],
+  ['up', 'Arriba', 'Sube en un menú o trae el mensaje/comando anterior.'],
+  ['down', 'Abajo', 'Baja en un menú o avanza en el historial.'],
+  ['enter', 'Enter', 'Confirma la opción marcada o envía un Enter suelto.'],
+  ['font-', 'Letra más pequeña', 'Achica el texto de la terminal (se recuerda).'],
+  ['font+', 'Letra más grande', 'Agranda el texto de la terminal (se recuerda).'],
+];
+const HELP_BUTTONS = [
+  ['#btn-image', 'Adjuntar imagen', 'Sube una foto a la laptop y pega su ruta para que Claude la vea.'],
+  ['#btn-snippets', 'Comandos guardados', 'Guarda comandos frecuentes; tocarlo lo inserta y ▶ lo envía directo.'],
+  ['#prompt .send', 'Enviar', 'Manda lo escrito y pulsa Enter. Con el cuadro vacío envía solo Enter. En computadora: Ctrl+Enter.'],
+  ['#btn-history', 'Historial', 'Muestra toda la conversación como chat, más cómoda de leer.'],
+];
+const helpRow = (el, name, desc) => {
+  const keycap = el ? [...el.childNodes].filter((n) => n.nodeName !== 'SPAN' || !el.querySelector('svg')).map((n) => n.outerHTML ?? esc(n.textContent)).join('') : '';
+  const cls = el?.classList.contains('stop') ? ' stop' : el?.classList.contains('primary') ? ' primary' : '';
+  return `<li><span class="keycap${cls}">${keycap}</span><div><b>${esc(name)}</b><span>${esc(desc)}</span></div></li>`;
+};
+$('#btn-help').addEventListener('click', () => {
+  $('#help-body').innerHTML = `<h2>Teclas</h2><ul>${HELP_KEYS.map(([k, n, d]) => helpRow($(`#keys [data-k="${k}"]`), n, d)).join('')}</ul>`
+    + `<h2>Otros botones</h2><ul>${HELP_BUTTONS.map(([s, n, d]) => helpRow($(s), n, d)).join('')}</ul>`;
+  $('#help').showModal();
+});
+$('#btn-close-help').addEventListener('click', () => $('#help').close());
+
+// ---------------- comandos guardados ----------------
+// Tocar uno lo inserta en el cuadro de texto (para revisarlo antes); ▶ lo envía directo.
+let snippetItems = [];
+
+function renderSnippets() {
+  $('#snippet-list').innerHTML = snippetItems.length ? snippetItems.map((x) => `
+    <li data-id="${esc(x.id)}">
+      <button type="button" class="snip-insert" title="Insertar">${x.name ? `<b>${esc(x.name)}</b>` : ''}<code>${esc(x.text)}</code></button>
+      <div class="snip-acts">
+        <button type="button" class="ghost icon snip-send" title="Enviar ahora" aria-label="Enviar ahora">${icon('play')}</button>
+        <button type="button" class="ghost icon snip-edit" title="Editar" aria-label="Editar">${icon('pencil')}</button>
+        <button type="button" class="ghost icon snip-del" title="Borrar" aria-label="Borrar">${icon('trash')}</button>
+      </div>
+    </li>`).join('') : '<li class="more">Aún no hay comandos. Escribe uno abajo y guárdalo.</li>';
+}
+
+function editSnippet(x) {
+  $('#snippet-id').value = x?.id || '';
+  $('#snippet-name').value = x?.name || '';
+  $('#snippet-text').value = x?.text ?? '';
+  $('#btn-snippet-save span').textContent = x?.id ? 'Actualizar' : 'Guardar';
+  $('#btn-snippet-cancel').classList.toggle('hidden', !x?.id);
+}
+
+function sendText(text) {
+  sendInput(text.includes('\n') ? `\x1b[200~${text}\x1b[201~` : text);
+  setTimeout(() => sendInput('\r'), 120);
+}
+
+$('#btn-snippets').addEventListener('click', async () => {
+  // Lo que ya está escrito queda listo para guardarlo.
+  editSnippet({ text: $('#prompt-text').value });
+  $('#snippets').showModal();
+  try { snippetItems = await api('/api/snippets'); } catch (err) { snippetItems = []; $('#snippet-list').innerHTML = `<li class="more">${esc(err.message)}</li>`; return; }
+  renderSnippets();
+});
+$('#btn-close-snippets').addEventListener('click', () => $('#snippets').close());
+$('#btn-snippet-cancel').addEventListener('click', () => editSnippet(null));
+$('#snippet-list').addEventListener('click', async (e) => {
+  const li = e.target.closest('li[data-id]');
+  if (!li) return;
+  const x = snippetItems.find((s) => s.id === li.dataset.id);
+  if (!x) return;
+  if (e.target.closest('.snip-edit')) { editSnippet(x); $('#snippet-text').focus(); return; }
+  if (e.target.closest('.snip-del')) {
+    if (!confirm(`¿Borrar «${x.name || x.text.slice(0, 40)}»?`)) return;
+    try { await api(`/api/snippets/${encodeURIComponent(x.id)}`, { method: 'DELETE' }); } catch (err) { alert(err.message); return; }
+    snippetItems = snippetItems.filter((s) => s.id !== x.id);
+    if ($('#snippet-id').value === x.id) editSnippet(null);
+    renderSnippets();
+    return;
+  }
+  $('#snippets').close();
+  if (e.target.closest('.snip-send')) { sendText(x.text); return; }
+  const ta = $('#prompt-text');
+  ta.value = ta.value && !/\s$/.test(ta.value) ? `${ta.value} ${x.text}` : ta.value + x.text;
+  ta.dispatchEvent(new Event('input'));
+  ta.focus();
+});
+$('#snippet-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = { id: $('#snippet-id').value || undefined, name: $('#snippet-name').value, text: $('#snippet-text').value };
+  if (!body.text.trim()) { $('#snippet-text').focus(); return; }
+  try {
+    const saved = await api('/api/snippets', { method: 'POST', body: JSON.stringify(body) });
+    const i = snippetItems.findIndex((s) => s.id === saved.id);
+    if (i >= 0) snippetItems[i] = saved; else snippetItems.push(saved);
+    editSnippet(null);
+    renderSnippets();
+  } catch (err) { alert(err.message); }
 });
 
 // Imagen: se sube a la laptop y su ruta se pega en Claude, que la adjunta como [Image #N].
@@ -348,6 +459,7 @@ $('#btn-close-history').addEventListener('click', () => $('#history').close());
 
 // ---------------- nueva sesión ----------------
 let projects = [];
+const TERMINAL = '__terminal';
 const fold = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const recentDirs = () => { try { return JSON.parse(store.get('recentDirs', '[]')); } catch { return []; } };
 const folderOf = (dir) => dir.split('/').slice(-2, -1)[0] || '';
@@ -417,7 +529,8 @@ $('#btn-new').addEventListener('click', async () => {
     const [list, cmds] = await Promise.all([api('/api/projects'), api('/api/commands')]);
     projects = list;
     renderProjects();
-    $('#new-cmd').innerHTML = cmds.map((c) => `<option>${esc(c)}</option>`).join('');
+    // «Solo terminal» abre un shell sin Claude.
+    $('#new-cmd').innerHTML = cmds.map((c) => `<option>${esc(c)}</option>`).join('') + `<option value="${TERMINAL}">Solo terminal (sin Claude)</option>`;
     $('#new-cmd').value = store.get('cmd', cmds[0]);
     if (!$('#new-cmd').value) $('#new-cmd').value = cmds[0];
   } catch {}
@@ -430,7 +543,8 @@ $('#new-form').addEventListener('submit', async (e) => {
   try {
     const cmd = $('#new-cmd').value;
     store.set('cmd', cmd);
-    await api('/api/sessions', { method: 'POST', body: JSON.stringify({ dir, name: $('#new-name').value || undefined, cmd }) });
+    const opts = cmd === TERMINAL ? { terminal: true } : { cmd };
+    await api('/api/sessions', { method: 'POST', body: JSON.stringify({ dir, name: $('#new-name').value || undefined, ...opts }) });
     store.set('recentDirs', JSON.stringify([dir, ...recentDirs().filter((d) => d !== dir)].slice(0, 5)));
     $('#new').close();
     setTimeout(refresh, 800); // da tiempo a que arranque claude

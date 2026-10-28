@@ -62,7 +62,8 @@ El servidor es un solo proceso de Node.js (sin frameworks ni paso de compilació
 | 📎 **Adjuntar imágenes** | Elige una foto o captura. Se achica a 2000 px como máximo en el celular, se sube a tu computadora y su ruta se pega en Claude, que la adjunta como `[Image #N]`. |
 | 💬 **Historial tipo chat** | Lee la transcripción de Claude Code (`.jsonl`) y la muestra como chat: tus mensajes, las respuestas de Claude con Markdown y bloques de código, y las herramientas agrupadas en filas plegables. Si no encuentra la transcripción, muestra el scrollback de tmux. |
 | 🔔 **Avisos push** | Con los hooks opcionales de Claude Code, el celular recibe un aviso cuando Claude necesita permiso o tu atención. Al tocarlo se abre esa sesión. |
-| ➕ **Sesión nueva con buscador de proyectos** | Arranca Claude en cualquiera de tus repos: busca por nombre o carpeta (sin importar tildes ni mayúsculas, los recientes primero) o escribe una ruta. Elige el comando o alias y, si quieres, un nombre para la sesión. |
+| ➕ **Sesión nueva con buscador de proyectos** | Arranca Claude en cualquiera de tus repos: busca por nombre o carpeta (sin importar tildes ni mayúsculas, los recientes primero) o escribe una ruta. Elige el comando o alias (o una terminal sola, sin Claude) y, si quieres, un nombre para la sesión. |
+| 🔖 **Comandos guardados** | Guarda comandos o prompts frecuentes en tu computadora e insértalos en la caja de texto, o envíalos con un toque, desde cualquier dispositivo. |
 | 🏷️ **Títulos de `/rename`** | Si le pusiste nombre a la conversación con `/rename` de Claude Code, se muestra ese nombre en vez del de la carpeta. |
 | 📱 **PWA instalable** | Agrégala a la pantalla de inicio y se abre a pantalla completa como una app nativa. Pensada primero para el celular, con soporte de safe areas, botones grandes y un tema grafito oscuro con acentos naranjas. También funciona bien en escritorio. |
 
@@ -222,6 +223,7 @@ Cada sesión de Claude Code que corre en tmux aparece como una tarjeta:
 - **Vista previa**: las últimas líneas de la pantalla.
 - **Sin terminal**: si ninguna terminal tiene abierta la sesión (por ejemplo, cerraste la pestaña sin salir de Claude), la tarjeta lleva una barra roja a la izquierda y una franja que lo explica, con dos botones: **Abrir en la laptop** abre una ventana de terminal en la laptop unida a la sesión (`LAPTOP_TERMINAL`), y **Cerrar** la cierra tras confirmar. La conversación queda guardada y la retomas con `ct -- --resume`.
 - **Claude terminó**: si Claude ya salió y solo queda el shell, la tarjeta lo indica y solo ofrece **Cerrar** para quitarla. Si ese shell sigue abierto en una terminal de la laptop (lo que deja `ct`), al cerrarlo también se cierra esa terminal. Nunca aparecen shells con un proceso corriendo, ni shells de tmux abiertos a mano en una terminal.
+- **Terminal**: una terminal sola abierta desde **Nueva** (sin Claude). Ofrece **Abrir en la laptop** (si ninguna terminal la tiene abierta) y **Cerrar**; al cerrarla se corta lo que esté corriendo en ella.
 
 Toca una tarjeta para abrirla. La lista se actualiza cada 3 segundos mientras está a la vista; **jala hacia abajo** para recargar al instante.
 Sin sesiones aparece un mensaje que explica cómo crear una. Si no hay conexión con el servidor, lo indica un aviso rojo.
@@ -235,7 +237,7 @@ Sin sesiones aparece un mensaje que explica cómo crear una. Si no hay conexión
 Toca **Nueva** en la barra superior:
 
 1. **Proyecto**: busca entre tus repos. Aparece cada repositorio git que esté directamente dentro de una carpeta de `PROJECT_ROOTS`. Busca por nombre y por carpeta, sin importar tildes ni mayúsculas, y los usados hace poco salen primero. También puedes escribir una ruta que empiece con `/` o `~/`. **Enter** elige el primer resultado.
-2. **Comando**: qué comando o alias ejecutar (de `CLAUDE_CMDS`). Recuerda el último que usaste.
+2. **Comando**: qué comando o alias ejecutar (de `CLAUDE_CMDS`), o **Solo terminal (sin Claude)** para abrir solo un shell interactivo en esa carpeta. Recuerda el último que usaste.
 3. **Nombre (opcional)**: nombre de la sesión de tmux. Por defecto es el de la carpeta, con `-2`, `-3`… si ya existe.
 4. **Crear** la arranca en segundo plano: `tmux new-session -d -c <carpeta> $SHELL -ilc '<cmd>; exec $SHELL -il'`. Usa un shell interactivo de login, así funcionan tus alias y tu PATH, y al salir de Claude te queda el shell.
 
@@ -245,7 +247,7 @@ Toca **Nueva** en la barra superior:
 
 <img src="docs/screenshots/phone-terminal.png" width="260" align="right" alt="Vista de terminal">
 
-La sesión real de tmux, en vivo. La barra muestra el nombre, un indicador de **conexión** (Wi-Fi verde si está conectada; Wi-Fi tachado en rojo si no, y se reconecta sola) y el botón de **historial**.
+La sesión real de tmux, en vivo. La barra muestra el nombre, un indicador de **conexión** (Wi-Fi verde si está conectada; Wi-Fi tachado en rojo si no, y se reconecta sola) un botón **?** que explica cada tecla y botón (con sus mismos iconos) y el botón de **historial**.
 
 | Tecla | Manda | Para qué |
 |---|---|---|
@@ -265,6 +267,8 @@ Los prompts de varias líneas se mandan como pegado. **Ctrl/⌘+Enter** envía d
 
 **📎 Adjuntar imagen**: elige una imagen (png, jpg, gif o webp, hasta 20 MB). Las fotos grandes se achican a 2000 px y se recodifican como JPEG en el celular.
 Se guardan en la computadora en `$TMPDIR/claude-remote-uploads/` (permisos 0700; se borran al día) y su ruta se pega en el prompt.
+
+**🔖 Comandos guardados**: el botón del marcador junto a la caja de texto abre tus comandos. Toca uno para insertarlo en la caja (y revisarlo antes) o ▶ para enviarlo directo; ahí mismo se editan o borran. Lo que ya tengas escrito en la caja aparece listo para guardarlo. Se guardan en la computadora en `data/snippets.json`, así todos los dispositivos ven la misma lista.
 
 <br clear="right">
 
