@@ -23,6 +23,8 @@ const ICON = {
   bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   sparkle: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   play: '<path d="M6 3 20 12 6 21Z"/>',
   pencil: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
@@ -345,11 +347,31 @@ const inline = (t) => esc(t).split(/(`[^`\n]+`)/).map((part, i) => (i % 2
     .replace(/(^|[^*\w])\*([^*\s][^*\n]*?)\*(?!\w)/g, '$1<em>$2</em>')
     .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, '<span class="lnk" title="$2">$1</span>'))).join('');
 
+const copyBtn = `<button type="button" class="copy-btn" title="Copiar" aria-label="Copiar">${icon('copy')}</button>`;
+
+// navigator.clipboard solo existe en HTTPS/localhost; por HTTP (Tailscale) se usa execCommand.
+async function copyText(text, host) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* sin contexto seguro */ }
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+  host.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch { ok = false; }
+  ta.remove();
+  return ok;
+}
+
 function md(text) {
   const out = [];
   const parts = text.split(/^```[^\n]*\n?/m);
   parts.forEach((chunk, n) => {
-    if (n % 2) { out.push(`<pre class="code"><code>${esc(chunk.replace(/\n$/, ''))}</code></pre>`); return; }
+    if (n % 2) {
+      // Un bloque de una sola línea casi siempre es un comando: se muestra partido, se copia tal cual.
+      const code = chunk.replace(/\n$/, '');
+      const shown = code.includes('\n') ? esc(code) : cmdHtml(code);
+      out.push(`<div class="codewrap"><pre class="code"><code>${shown}</code></pre>${copyBtn.replace('<button', `<button data-copy="${esc(code)}"`)}</div>`);
+      return;
+    }
     let para = [], list = null, table = [];
     const flush = () => {
       if (para.length) out.push(`<p>${para.map(inline).join('<br>')}</p>`);
@@ -384,7 +406,46 @@ const toolIcon = (name) => (/^(Bash|BashOutput|KillShell|KillBash)$/.test(name) 
     : /^(Grep|Glob|LS|ToolSearch)$/.test(name) ? 'search'
       : /^Web/.test(name) ? 'globe'
         : /^(Task|Agent)$/.test(name) ? 'bot' : 'gear');
-const toolRow = (t) => `<div class="trow">${icon(toolIcon(t.name))}<b>${esc(t.name)}</b><span>${esc(t.arg)}</span></div>`;
+// Recorre un comando y deja que `step` reescriba solo lo que está fuera de comillas y de (...).
+// step(s, i, out) devuelve [out, i] si consumió algo, o null.
+function scanShell(s, step) {
+  let out = '', q = null, depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (q) {
+      out += c;
+      if (c === '\\' && q !== "'") out += s[++i] ?? '';
+      else if (c === q) q = null;
+      continue;
+    }
+    if (c === '\\') { out += c + (s[++i] ?? ''); continue; }
+    if (c === "'" || c === '"' || c === '`') q = c;
+    else if (c === '(') depth++;
+    else if (c === ')') depth = Math.max(0, depth - 1);
+    const r = !depth && !q ? step(s, i, out) : null;
+    if (r) { [out, i] = r; while (s[i + 1] === ' ') i++; continue; }
+    out += c;
+  }
+  return out;
+}
+
+// Solo para leer: una línea por paso (&&, ||, |, ;) y, si el paso es largo, una línea por opción.
+// Lo copiado es siempre el original.
+const LONG_CMD = 80;
+function fmtCmd(s) {
+  if (s.includes('\n')) return s;
+  const steps = scanShell(s, (str, i, out) => {
+    const two = str.slice(i, i + 2);
+    if (two === '&&' || two === '||') return [`${out.trimEnd()}\n  ${two} `, i + 1];
+    if (str[i] === '|' && str[i + 1] !== '&') return [`${out.trimEnd()}\n  | `, i];
+    if (str[i] === ';' && str[i + 1] !== ';') return [`${out.trimEnd()};\n`, i];
+    return null;
+  });
+  return steps.split('\n').map((line) => (line.length <= LONG_CMD ? line : scanShell(line, (str, i, out) => (
+    str[i] === ' ' && /^-{1,2}[A-Za-z]/.test(str.slice(i + 1)) ? [`${out.trimEnd()} \\\n      `, i] : null)))).join('\n');
+}
+const cmdHtml = (s) => esc(fmtCmd(s)).replace(/^  (&amp;&amp;|\|\||\|) /gm, '  <span class="op">$1</span> ');
+const toolRow = (t) => `<div class="trow">${icon(toolIcon(t.name))}<b>${esc(t.name)}</b>${t.cmd ? `<pre class="cmd">${cmdHtml(t.cmd)}</pre>` : `<span>${esc(t.arg)}</span>`}${t.cmd ? copyBtn.replace('<button', `<button data-copy="${esc(t.cmd)}"`) : ''}</div>`;
 const hhmm = (d) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
 const dayName = (d) => {
   const diff = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 864e5);
@@ -438,7 +499,16 @@ $('#btn-hide-tools').addEventListener('click', () => {
   const on = $('#btn-hide-tools').getAttribute('aria-pressed') !== 'true';
   store.set('hideTools', on ? '1' : '0'); setHideTools(on);
 });
-$('#history-chat').addEventListener('click', (e) => { if (e.target.closest('#btn-history-more')) renderHistory(true); });
+$('#history-chat').addEventListener('click', async (e) => {
+  if (e.target.closest('#btn-history-more')) { renderHistory(true); return; }
+  const btn = e.target.closest('.copy-btn');
+  if (!btn) return;
+  e.preventDefault(); e.stopPropagation();
+  const text = btn.dataset.copy ?? btn.parentElement.querySelector('code')?.textContent ?? '';
+  const ok = await copyText(text, $('#history'));
+  btn.innerHTML = icon(ok ? 'check' : 'x'); btn.classList.toggle('done', ok);
+  setTimeout(() => { btn.innerHTML = icon('copy'); btn.classList.remove('done'); }, 1500);
+});
 $('#history-chat').addEventListener('scroll', (e) => {
   const c = e.target;
   $('#btn-history-end').classList.toggle('hidden', c.scrollHeight - c.scrollTop - c.clientHeight < 300);

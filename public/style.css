@@ -256,6 +256,18 @@ dialog[open] { animation: rise .2s ease-out; }
 .prose pre { margin: 0 0 10px; padding: 12px 14px; background: var(--term-bg); border: 1px solid var(--line-soft); border-radius: var(--r-sm);
   overflow-x: auto; font: 12.5px/1.5 var(--mono); color: #e4dfd6; white-space: pre; overflow-wrap: normal; }
 .prose pre code { background: none; border: 0; padding: 0; font: inherit; }
+.codewrap { position: relative; }
+.codewrap pre { padding-right: 46px; }
+.copy-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; flex: 0 0 auto;
+  border: 1px solid var(--line-soft); border-radius: 8px; background: var(--raised); color: var(--muted); cursor: pointer; }
+.copy-btn .i { width: 16px; height: 16px; }
+.copy-btn.done { color: var(--accent); }
+.codewrap .copy-btn { position: absolute; top: 6px; right: 6px; }
+.trow span { flex: 1; }
+.trow .copy-btn { margin: -4px -2px -4px 0; }
+.trow pre.cmd { flex: 1; min-width: 0; margin: -2px 0; padding: 8px 10px; background: var(--term-bg); border: 1px solid var(--line-soft); border-radius: var(--r-sm);
+  font: 12.5px/1.55 var(--mono); color: #e4dfd6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.trow pre.cmd .op, .prose pre .op { color: var(--accent); font-weight: 600; }
 .prose .lnk { color: var(--accent); text-decoration: underline; text-decoration-color: rgba(255, 122, 69, .4); text-underline-offset: 2px; }
 
 .msg.tools { margin-left: 36px; border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: var(--panel); font-size: 13px; }
