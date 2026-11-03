@@ -275,6 +275,8 @@ Se guardan en la computadora en `$TMPDIR/claude-remote-uploads/` (permisos 0700;
 
 <br clear="right">
 
+<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Ayuda de teclas">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Comandos guardados"><br><sub>Ayuda de teclas (?) · Comandos guardados</sub></p>
+
 ### Historial
 
 <img src="docs/screenshots/phone-history.png" width="260" align="right" alt="Vista de historial">
@@ -284,6 +286,7 @@ Toca el ícono del reloj para leer la conversación completa con calma:
 - **Tus mensajes** van a la derecha en burbujas naranjas. **Los de Claude** van a la izquierda con Markdown: títulos, listas, negritas, código en línea y bloques de código con scroll horizontal.
 - **Las herramientas** aparecen como filas compactas con un ícono por tipo (terminal para Bash, archivo para Read/Edit/Write, lupa para Grep/Glob, globo para las web, robot para agentes). Las seguidas se agrupan en **"N herramientas"**; tócalas para desplegarlas.
 - **Horas** (HH:MM) y separadores por día (*Hoy*, *Ayer*, fecha).
+- **El contexto de plugins** que se inyecta al iniciar la sesión (p. ej. claude-mem, context-mode) y **el resumen de compactación** aparecen como tarjetas plegadas con su origen y tamaño; tócalas para leerlas.
 - El botón 🔧 oculta o muestra las herramientas y se recuerda en el dispositivo. **Ir al final** baja al último mensaje. En conversaciones largas se dibujan primero los últimos 300 mensajes; **Cargar anteriores** trae el resto.
 - Si no encuentra la transcripción (p. ej. una sesión que no es de Claude Code), muestra el scrollback de tmux como texto.
 

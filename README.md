@@ -276,6 +276,8 @@ The file is saved on the computer in `$TMPDIR/claude-remote-uploads/` (mode 0700
 
 <br clear="right">
 
+<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Key help">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Saved commands"><br><sub>Key help (?) · Saved commands</sub></p>
+
 ### History
 
 <img src="docs/screenshots/phone-history.png" width="260" align="right" alt="History view">
@@ -285,6 +287,7 @@ Tap the clock icon for a readable version of the whole conversation:
 - **Your messages** are on the right in orange bubbles. **Claude's** are on the left with Markdown: headings, lists, bold, inline code and horizontally scrollable code blocks.
 - **Tool calls** appear as compact rows with an icon per type (terminal for Bash, file for Read/Edit/Write, magnifier for Grep/Glob, globe for web tools, robot for agents). Consecutive calls collapse into **“N herramientas”**; tap to expand.
 - **Timestamps** (HH:MM) and day separators (*Hoy* = today, *Ayer* = yesterday).
+- **Plugin context** injected at session start (e.g. claude-mem, context-mode) and the **compaction summary** show up as collapsed cards with their source and size; tap to read them.
 - The 🔧 button hides or shows tool calls and is remembered on the device. **Ir al final** jumps to the bottom. Long conversations render the last 300 messages first; **Cargar anteriores** loads earlier ones.
 - If the transcript can't be found (e.g. a session not started by Claude Code), it shows the tmux scrollback as plain text.
 
