@@ -23,6 +23,7 @@ const ICON = {
   bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   sparkle: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
   copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
@@ -458,6 +459,11 @@ function renderMsg(m, prevDay) {
   const sep = day && day !== prevDay ? `<div class="day"><span>${esc(dayName(d))}</span></div>` : '';
   const time = d && !isNaN(d) ? `<time>${hhmm(d)}</time>` : '';
   if (m.role === 'user') return [`${sep}<div class="msg user"><div class="bubble">${esc(m.text)}</div>${time}</div>`, day];
+  if (m.role === 'note') {
+    const label = m.source === 'compact' ? 'Compactación' : m.source;
+    const kb = Math.max(1, Math.round(m.text.length / 1024));
+    return [`${sep}<details class="msg note"><summary>${icon('info')}<b>${esc(label)}</b><span>${esc(m.title)} · ${kb} KB</span>${icon('chevron', 'i chev')}</summary><pre>${esc(m.text)}</pre></details>`, day];
+  }
   if (m.role === 'assistant') return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body"><div class="prose">${md(m.text)}</div>${time}</div></div>`, day];
   const t = m.tools;
   if (t.length === 1) {
@@ -524,7 +530,7 @@ $('#btn-history').addEventListener('click', async () => {
     const res = await api(`/api/panes/${encodeURIComponent(currentPane)}/history?format=json`);
     if (Array.isArray(res?.messages)) {
       histMsgs = res.messages; histShown = 0;
-      const n = histMsgs.filter((m) => m.role !== 'tools').length;
+      const n = histMsgs.filter((m) => m.role === 'user' || m.role === 'assistant').length;
       $('#history-count').textContent = `${n} mensaje${n === 1 ? '' : 's'}`;
       pre.classList.add('hidden'); chat.classList.remove('hidden');
       renderHistory(false);
