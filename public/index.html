@@ -52,9 +52,16 @@
   <dialog id="history">
     <header class="bar">
       <h1><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg><span>Historial</span><span id="history-count" class="count"></span></h1>
+      <button class="ghost icon" id="btn-history-search" aria-pressed="false" title="Buscar" aria-label="Buscar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
       <button class="ghost icon" id="btn-hide-tools" aria-pressed="false" title="Ocultar herramientas" aria-label="Ocultar herramientas"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></button>
       <button class="ghost icon" id="btn-close-history" aria-label="Cerrar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </header>
+    <div id="history-search" class="hidden">
+      <input id="history-q" type="search" placeholder="Buscar en la conversación…" autocomplete="off" enterkeyhint="search" aria-label="Buscar en la conversación">
+      <span id="history-hits" aria-live="polite"></span>
+      <button type="button" class="ghost icon" id="btn-hit-prev" title="Anterior (Enter)" aria-label="Coincidencia anterior"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></button>
+      <button type="button" class="ghost icon" id="btn-hit-next" title="Siguiente (Shift+Enter)" aria-label="Coincidencia siguiente"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
     <div id="history-body">
       <pre id="history-text"></pre>
       <div id="history-chat" class="hidden"></div>

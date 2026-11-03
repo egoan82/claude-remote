@@ -481,7 +481,7 @@ function renderHistory(prepend) {
   const from = Math.max(0, histMsgs.length - histShown - PAGE);
   const to = histMsgs.length - histShown;
   let html = '', day = from > 0 ? (histMsgs[from - 1].ts && new Date(histMsgs[from - 1].ts).toDateString()) : null;
-  for (let i = from; i < to; i++) { const [h, d] = renderMsg(histMsgs[i], day); html += h; day = d; }
+  for (let i = from; i < to; i++) { const [h, d] = renderMsg(histMsgs[i], day); html += `<div class="mi" data-i="${i}">${h}</div>`; day = d; }
   histShown = histMsgs.length - from;
   const more = from > 0 ? `<button type="button" class="more-btn" id="btn-history-more">Cargar anteriores (${from})</button>` : '';
   if (prepend) {
@@ -541,6 +541,85 @@ $('#btn-history').addEventListener('click', async () => {
   } catch (err) { pre.textContent = err.message; }
 });
 $('#btn-close-history').addEventListener('click', () => $('#history').close());
+
+// ---------------- búsqueda en el historial ----------------
+// Sin mayúsculas ni tildes: "accion" encuentra "Acción". map[j] = índice en el texto original.
+function foldMap(s) {
+  let str = '';
+  const map = [];
+  for (let i = 0; i < s.length; i++) {
+    const f = s[i].normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+    for (let k = 0; k < f.length; k++) map.push(i);
+    str += f;
+  }
+  return { str, map };
+}
+const msgText = (m) => (m.tools ? m.tools.map((t) => `${t.name} ${t.arg ?? ''} ${t.cmd ?? ''}`).join('\n')
+  : m.role === 'note' ? `${m.title ?? ''} ${m.text}` : m.text ?? '');
+let hits = [], hitAt = -1, searchTimer;
+const canHL = typeof Highlight === 'function' && CSS.highlights;
+
+function clearHL() {
+  if (canHL) { CSS.highlights.delete('hist-hit'); CSS.highlights.delete('hist-cur'); }
+  $('#history-chat .hit-cur')?.classList.remove('hit-cur');
+}
+function runSearch() {
+  const q = foldMap($('#history-q').value.trim()).str;
+  const hideTools = $('#history-chat').classList.contains('no-tools');
+  hits = !q ? [] : histMsgs.flatMap((m, i) => (
+    (hideTools && m.tools) || !foldMap(msgText(m)).str.includes(q) ? [] : [i]));
+  hitAt = hits.length - 1; // empieza por la más reciente
+  showHit();
+}
+function showHit() {
+  clearHL();
+  const q = foldMap($('#history-q').value.trim()).str;
+  $('#history-hits').textContent = !q ? '' : hits.length ? `${hitAt + 1}/${hits.length}` : 'Sin resultados';
+  $('#btn-hit-prev').disabled = $('#btn-hit-next').disabled = hits.length < 2;
+  if (!hits.length) return;
+  const i = hits[hitAt];
+  while (i < histMsgs.length - histShown) renderHistory(true);
+  const wrap = $(`#history-chat .mi[data-i="${i}"]`);
+  const el = wrap?.querySelector('.msg');
+  if (!el) return;
+  if (el.tagName === 'DETAILS') el.open = true;
+  el.classList.add('hit-cur');
+  if (canHL) {
+    // Resalta cada aparición en los mensajes visibles; la actual con otro color.
+    const all = new Highlight(), cur = new Highlight();
+    for (const w of $('#history-chat').querySelectorAll('.mi')) {
+      if (!hits.includes(+w.dataset.i)) continue;
+      const tw = document.createTreeWalker(w, NodeFilter.SHOW_TEXT);
+      for (let n; (n = tw.nextNode());) {
+        const { str, map } = foldMap(n.data);
+        for (let at = str.indexOf(q); at !== -1; at = str.indexOf(q, at + q.length)) {
+          const r = new Range();
+          r.setStart(n, map[at]); r.setEnd(n, map[at + q.length - 1] + 1);
+          (w === wrap ? cur : all).add(r);
+        }
+      }
+    }
+    CSS.highlights.set('hist-hit', all); CSS.highlights.set('hist-cur', cur);
+  }
+  el.scrollIntoView({ block: 'center' });
+}
+const stepHit = (d) => { if (hits.length) { hitAt = (hitAt + d + hits.length) % hits.length; showHit(); } };
+function setSearch(on) {
+  $('#history-search').classList.toggle('hidden', !on);
+  $('#btn-history-search').setAttribute('aria-pressed', String(on));
+  if (on) { $('#history-q').focus(); $('#history-q').select(); return; }
+  $('#history-q').value = ''; hits = []; hitAt = -1; clearHL(); $('#history-hits').textContent = '';
+}
+$('#btn-history-search').addEventListener('click', () => setSearch($('#history-search').classList.contains('hidden')));
+$('#history-q').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 200); });
+$('#history-q').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); if (!hits.length) runSearch(); else stepHit(e.shiftKey ? 1 : -1); }
+  if (e.key === 'Escape') { e.preventDefault(); setSearch(false); }
+});
+$('#btn-hit-prev').addEventListener('click', () => stepHit(-1));
+$('#btn-hit-next').addEventListener('click', () => stepHit(1));
+$('#btn-hide-tools').addEventListener('click', () => { if ($('#history-q').value.trim()) runSearch(); });
+$('#history').addEventListener('close', () => setSearch(false));
 
 // ---------------- nueva sesión ----------------
 let projects = [];

@@ -287,6 +287,7 @@ Toca el ícono del reloj para leer la conversación completa con calma:
 - **Las herramientas** aparecen como filas compactas con un ícono por tipo (terminal para Bash, archivo para Read/Edit/Write, lupa para Grep/Glob, globo para las web, robot para agentes). Las seguidas se agrupan en **"N herramientas"**; tócalas para desplegarlas.
 - **Horas** (HH:MM) y separadores por día (*Hoy*, *Ayer*, fecha).
 - **El contexto de plugins** que se inyecta al iniciar la sesión (p. ej. claude-mem, context-mode) y **el resumen de compactación** aparecen como tarjetas plegadas con su origen y tamaño; tócalas para leerlas.
+- El botón 🔍 abre un **buscador** (sin distinguir mayúsculas ni tildes) en mensajes, comandos y notas de plugins. Resalta las coincidencias; el contador y ↑ ↓ (o Enter / Shift+Enter) saltan entre ellas, de la más reciente a la más vieja, cargando mensajes anteriores y abriendo tarjetas plegadas si hace falta.
 - El botón 🔧 oculta o muestra las herramientas y se recuerda en el dispositivo. **Ir al final** baja al último mensaje. En conversaciones largas se dibujan primero los últimos 300 mensajes; **Cargar anteriores** trae el resto.
 - Si no encuentra la transcripción (p. ej. una sesión que no es de Claude Code), muestra el scrollback de tmux como texto.
 
