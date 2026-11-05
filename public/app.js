@@ -199,7 +199,7 @@ const HELP_KEYS = [
   ['ctrlc', 'Detener', 'Interrumpe lo que esté haciendo Claude o el comando que corre (Ctrl+C). Dos veces seguidas con Claude libre lo cierra.'],
   ['1', 'Opción 1', 'Elige la primera opción cuando Claude pregunta (p. ej. «Sí» al pedir permiso).'],
   ['2', 'Opción 2', 'Elige la segunda opción (p. ej. «Sí, y no volver a preguntar»).'],
-  ['3', 'Opción 3', 'Elige la tercera opción (normalmente «No» o decirle otra cosa).'],
+  ['3', 'Opción 3', 'Elige la tercera opción (en los permisos suele ser «Sí, y cambiar a modo auto»; «No» es la última: llega con las flechas y Enter, o con Esc).'],
   ['esc', 'Esc', 'Cancela o cierra un menú. Con Claude trabajando, lo detiene; dos veces seguidas permite volver a un mensaje anterior.'],
   ['tab', 'Tab', 'Autocompleta rutas, comandos y, en Claude, archivos tras @.'],
   ['stab', 'Mayús+Tab', 'En Claude cambia de modo: normal, aceptar ediciones, plan y auto.'],
