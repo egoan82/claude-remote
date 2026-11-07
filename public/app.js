@@ -143,6 +143,9 @@ function openPane(pane, push) {
   const s = lastSessions.find((x) => x.pane === pane);
   $('#term-title').textContent = s ? `${s.title || s.project} · ${s.session}` : pane;
   $('#prompt-text').placeholder = s?.state === 'term' || s?.state === 'ended' ? 'Escribe un comando…' : 'Escribe a Claude…';
+  $('#btn-end').classList.toggle('hidden', s?.state === 'term' || s?.state === 'ended');
+  $('#relaunch').classList.add('hidden');
+  if (s?.state === 'ended') loadRelaunch(pane);
   $('#list-view').classList.add('hidden');
   $('#term-view').classList.remove('hidden');
   if (push) history.pushState({ pane }, '', `?pane=${encodeURIComponent(pane)}`);
@@ -156,20 +159,43 @@ function closeTerm() {
   if (ws) { const s = ws; ws = null; s.close(); }
 }
 
-const backToList = () => (history.state?.pane ? history.back() : (history.replaceState(null, '', '/'), showList()));
-$('#btn-back').addEventListener('click', backToList);
+$('#btn-back').addEventListener('click', () => (history.state?.pane ? history.back() : (history.replaceState(null, '', '/'), showList())));
 
-// Terminar: cierra Claude y su panel (si era el único, tmux borra la sesión) y vuelve a la lista.
-$('#btn-end').addEventListener('click', async () => {
-  const pane = currentPane;
-  if (!pane) return;
-  const s = lastSessions.find((x) => x.pane === pane);
-  const aviso = s?.state === 'working' ? '\n\nOjo: está trabajando y se cortará lo que esté haciendo.' : '';
-  const guardada = s?.state === 'term' || s?.state === 'ended' ? '' : '\nLa conversación queda guardada (ct -- --resume).';
-  if (!confirm(`¿Terminar la sesión ${s?.target || ''}?${guardada}${aviso}`)) return;
-  try { await api(`/api/panes/${encodeURIComponent(pane)}`, { method: 'DELETE' }); } catch (err) { alert(`No se pudo terminar: ${err.message}`); return; }
-  if (currentPane === pane) backToList();
+// Terminar: escribe /exit en Claude, como hacerlo a mano. Claude muestra cómo retomar la conversación y queda la terminal.
+$('#btn-end').addEventListener('click', () => {
+  const s = lastSessions.find((x) => x.pane === currentPane);
+  const busy = s?.state === 'working' || s?.state === 'waiting';
+  const aviso = busy ? '\n\nOjo: se cancela lo que esté haciendo o preguntando.' : '';
+  if (!confirm(`¿Salir de Claude (/exit)?\nQueda la terminal con el comando para retomar la conversación.${aviso}`)) return;
+  // Esc cancela lo que esté en curso; Ctrl+U borra lo que haya en la caja de Claude.
+  if (busy) sendInput('\x1b');
+  setTimeout(() => { sendInput('\x15'); sendText('/exit'); $('#btn-end').classList.add('hidden'); $('#prompt-text').placeholder = 'Escribe un comando…'; }, busy ? 400 : 0);
+  loadRelaunch(currentPane, 6);
 });
+
+// Tras salir Claude: «Retomar» lo abre con --resume <id> (o --continue si no se ve el ID) y «Nueva» con una conversación nueva.
+let relaunch = null;
+async function loadRelaunch(pane, tries = 1) {
+  for (let i = 0; i < tries; i++) {
+    await new Promise((r) => setTimeout(r, i ? 1000 : tries > 1 ? 1500 : 0));
+    if (currentPane !== pane) return;
+    try { relaunch = await api(`/api/panes/${encodeURIComponent(pane)}/relaunch`); } catch { continue; }
+    $('#btn-resume').title = relaunch.resume ? `${relaunch.cmd} --resume ${relaunch.resume}` : `${relaunch.cmd} --continue`;
+    $('#btn-fresh').title = relaunch.cmd;
+    $('#relaunch').classList.remove('hidden');
+    return;
+  }
+}
+for (const id of ['#btn-resume', '#btn-fresh']) {
+  $(id).addEventListener('click', (e) => {
+    if (!relaunch) return;
+    sendInput('\x15');
+    sendText(e.currentTarget.title);
+    $('#relaunch').classList.add('hidden');
+    $('#btn-end').classList.remove('hidden');
+    $('#prompt-text').placeholder = 'Escribe a Claude…';
+  });
+}
 window.addEventListener('popstate', (e) => (e.state?.pane ? openPane(e.state.pane, false) : showList()));
 
 document.addEventListener('visibilitychange', () => {
@@ -228,7 +254,9 @@ const HELP_BUTTONS = [
   ['#btn-image', 'Adjuntar imagen', 'Sube una foto a la laptop y pega su ruta para que Claude la vea.'],
   ['#btn-snippets', 'Comandos guardados', 'Guarda comandos frecuentes; tocarlo lo inserta y ▶ lo envía directo.'],
   ['#prompt .send', 'Enviar', 'Manda lo escrito y pulsa Enter. Con el cuadro vacío envía solo Enter. En computadora: Ctrl+Enter.'],
-  ['#btn-end', 'Terminar sesión', 'Cierra Claude y su sesión de tmux y vuelve a la lista. La conversación queda para --resume. No cierra si está abierta en una terminal de la laptop.'],
+  ['#btn-end', 'Terminar sesión', 'Sale de Claude con /exit. Queda la terminal con el comando para retomar la conversación (--resume). Solo aparece mientras Claude está abierto.'],
+  ['#btn-resume', 'Retomar', 'Aparece cuando Claude ya salió: lo vuelve a abrir en la misma conversación (--resume con el ID que mostró al salir).'],
+  ['#btn-fresh', 'Nueva', 'Aparece cuando Claude ya salió: lo abre de nuevo con una conversación nueva, con el mismo comando.'],
   ['#btn-history', 'Historial', 'Muestra toda la conversación como chat, más cómoda de leer.'],
 ];
 const helpRow = (el, name, desc) => {

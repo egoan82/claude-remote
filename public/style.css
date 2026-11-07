@@ -202,7 +202,7 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 @media (min-width: 760px) {
   #term-view { max-width: 1180px; margin: 0 auto; width: 100%; }
   #term { margin: 0 12px; }
-  #keys, #prompt { padding-left: 12px; padding-right: 12px; }
+  #keys, #prompt, #relaunch { padding-left: 12px; padding-right: 12px; }
 }
 
 /* ---------- diálogos ---------- */
@@ -420,3 +420,11 @@ dialog[open] { animation: rise .2s ease-out; }
 #keys [data-k="stab"] { gap: 0; }
 #keys button .sh { font: 700 14px var(--font); margin-right: 1px; }
 #help-body .keycap { width: 56px; padding: 0; }
+
+/* Tras salir Claude: retomar la conversación o abrir una nueva. */
+#relaunch { display: flex; align-items: center; gap: 6px; padding: 10px 8px 0; }
+#relaunch p { flex: 1; min-width: 0; margin: 0; display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--muted); }
+#relaunch p .i { width: 17px; height: 17px; color: var(--danger); }
+/* Mismo tamaño y forma que «Enviar». */
+#relaunch button { min-height: 46px; border-radius: var(--r-md); padding: 0 16px; font-weight: 600; }
+#relaunch #btn-fresh { background: var(--raised); }

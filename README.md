@@ -248,7 +248,7 @@ Tap **Nueva** in the header:
 
 <img src="docs/screenshots/phone-terminal.png" width="260" align="right" alt="Terminal view">
 
-The real tmux session, live. The header shows the session name, a **connection** indicator (green Wi-Fi when connected, red crossed-out Wi-Fi when disconnected; it reconnects automatically) a **?** button that explains every key and button (with the same icons), a red **end session** button (power icon) that closes Claude and its tmux session after confirming and goes back to the list (the conversation is kept for `ct -- --resume`; it refuses while a laptop terminal has the session open), and the **history** button.
+The real tmux session, live. The header shows the session name, a **connection** indicator (green Wi-Fi when connected, red crossed-out Wi-Fi when disconnected; it reconnects automatically) a **?** button that explains every key and button (with the same icons), a red **end session** button (power icon) that, after confirming, types `/exit` into Claude so it prints its usual exit summary and the shell stays open (only shown while Claude is running). Once Claude has exited, a strip above the keys offers **Retomar** (reopens the same conversation with `--resume <id>`, read from Claude's exit message, or `--continue`) and **Nueva** (a fresh conversation), both using the command the session was started with, and the **history** button.
 
 | Key | Sends | Use it for |
 |---|---|---|

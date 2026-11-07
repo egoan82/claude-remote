@@ -247,7 +247,7 @@ Toca **Nueva** en la barra superior:
 
 <img src="docs/screenshots/phone-terminal.png" width="260" align="right" alt="Vista de terminal">
 
-La sesión real de tmux, en vivo. La barra muestra el nombre, un indicador de **conexión** (Wi-Fi verde si está conectada; Wi-Fi tachado en rojo si no, y se reconecta sola) un botón **?** que explica cada tecla y botón (con sus mismos iconos), un botón rojo de **terminar sesión** (icono de encendido) que, tras confirmar, cierra Claude y su sesión de tmux y vuelve a la lista (la conversación queda para `ct -- --resume`; no cierra si una terminal de la laptop tiene la sesión abierta), y el botón de **historial**.
+La sesión real de tmux, en vivo. La barra muestra el nombre, un indicador de **conexión** (Wi-Fi verde si está conectada; Wi-Fi tachado en rojo si no, y se reconecta sola) un botón **?** que explica cada tecla y botón (con sus mismos iconos), un botón rojo de **terminar sesión** (icono de encendido) que, tras confirmar, escribe `/exit` en Claude para que muestre su resumen de salida habitual y quede el shell (solo aparece mientras Claude está abierto). Cuando Claude ya salió, una franja sobre las teclas ofrece **Retomar** (vuelve a la misma conversación con `--resume <id>`, leído del mensaje de salida de Claude, o `--continue`) y **Nueva** (una conversación nueva), ambas con el comando con que se lanzó la sesión, y el botón de **historial**.
 
 | Tecla | Manda | Para qué |
 |---|---|---|
