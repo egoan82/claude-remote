@@ -275,7 +275,7 @@ Se guardan en la computadora en `$TMPDIR/claude-remote-uploads/` (permisos 0700;
 
 <br clear="right">
 
-<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Ayuda de teclas">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Comandos guardados"><br><sub>Ayuda de teclas (?) · Comandos guardados</sub></p>
+<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Ayuda de teclas">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Comandos guardados">&nbsp;&nbsp;<img src="docs/screenshots/phone-ended.png" width="240" alt="Tras terminar Claude: Retomar o Nueva"><br><sub>Ayuda de teclas (?) · Comandos guardados · Tras /exit: Retomar o Nueva</sub></p>
 
 ### Historial
 

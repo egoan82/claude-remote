@@ -82,15 +82,25 @@ const TERM = [
   `${E}2m╰──────────────────────────────────────╯${E}0m`,
   `  ${E}2m? for shortcuts${E}0m`,
 ].join('\r\n');
+// What is left on screen after /exit: Claude's exit summary and the shell prompt.
+const RESUME_ID = '5f3c9a1e-7b2d-4e8a-9c61-2d0b8f4a7e13';
+const TERM_ENDED = [
+  `${E}2m>${E}0m /exit`,
+  `  ⎿  ${E}2mGoodbye!${E}0m`, '',
+  `${E}2mResume this session with:${E}0m`,
+  `claude --resume ${RESUME_ID}`,
+  `${E}32mdev@laptop${E}0m:${E}34m~/code/data-pipeline${E}0m$ `,
+].join('\r\n');
 
 // ---------------- mocked server ----------------
-async function setup(page, { sessions = SESSIONS } = {}) {
+async function setup(page, { sessions = SESSIONS, term = TERM } = {}) {
   await page.route(`${ORIGIN}/**`, async (route) => {
     const u = new URL(route.request().url());
     const p = u.pathname;
     const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (p === '/api/sessions') return json(sessions);
     if (/\/history$/.test(p)) return json({ messages: HISTORY });
+    if (/\/relaunch$/.test(p)) return json({ cmd: 'claude', resume: RESUME_ID });
     if (p === '/api/projects') return json(PROJECTS);
     if (p === '/api/commands') return json(['claude', 'claude --continue']);
     if (p === '/api/snippets') return json(SNIPPETS);
@@ -99,16 +109,16 @@ async function setup(page, { sessions = SESSIONS } = {}) {
     if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: '' });
     return route.fulfill({ status: 200, contentType: MIME[path.extname(file)] || 'application/octet-stream', body: fs.readFileSync(file) });
   });
-  await page.routeWebSocket(/\/ws\?/, (ws) => { setTimeout(() => ws.send(TERM), 300); ws.onMessage(() => {}); });
+  await page.routeWebSocket(/\/ws\?/, (ws) => { setTimeout(() => ws.send(term), 300); ws.onMessage(() => {}); });
 }
 
 const browser = await chromium.launch();
-const shot = async (name, { phone = true, sessions, act } = {}) => {
+const shot = async (name, { phone = true, sessions, term, act } = {}) => {
   const ctx = await browser.newContext(phone
     ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, serviceWorkers: 'block', locale: 'es' }
     : { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, serviceWorkers: 'block', locale: 'es' });
   const page = await ctx.newPage();
-  await setup(page, { sessions });
+  await setup(page, { sessions, term });
   await page.goto(`${ORIGIN}/`);
   await page.waitForSelector('#sessions li');
   await page.evaluate(() => document.fonts.ready);
@@ -133,6 +143,8 @@ await shot('phone-terminal', { act: openTerm });
 await shot('phone-history', { act: (p) => openHistory(p, { scroll: 'top' }) });
 await shot('phone-snippets', { act: async (p) => { await openTerm(p); await p.click('#btn-snippets'); await p.waitForSelector('#snippet-list li[data-id]'); } });
 await shot('phone-help', { act: async (p) => { await openTerm(p); await p.click('#btn-help'); await p.waitForSelector('#help-body li'); } });
+const ENDED = SESSIONS.map((s) => (s.pane === '%3' ? { ...s, state: 'ended', preview: ['Resume this session with:', `claude --resume ${RESUME_ID}`, 'dev@laptop:~/code/data-pipeline$'] } : s));
+await shot('phone-ended', { sessions: ENDED, term: TERM_ENDED, act: async (p) => { await p.click('.card[data-pane="%3"]'); await p.waitForSelector('#relaunch:not(.hidden)'); await p.waitForTimeout(600); } });
 await shot('desktop-list', { phone: false });
 await shot('desktop-terminal', { phone: false, act: openTerm });
 await shot('desktop-history', { phone: false, act: (p) => openHistory(p, { expand: true }) });

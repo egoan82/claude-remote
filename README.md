@@ -276,7 +276,7 @@ The file is saved on the computer in `$TMPDIR/claude-remote-uploads/` (mode 0700
 
 <br clear="right">
 
-<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Key help">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Saved commands"><br><sub>Key help (?) · Saved commands</sub></p>
+<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Key help">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Saved commands">&nbsp;&nbsp;<img src="docs/screenshots/phone-ended.png" width="240" alt="After ending Claude: Retomar or Nueva"><br><sub>Key help (?) · Saved commands · After /exit: Retomar or Nueva</sub></p>
 
 ### History
 
