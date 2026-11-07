@@ -156,7 +156,20 @@ function closeTerm() {
   if (ws) { const s = ws; ws = null; s.close(); }
 }
 
-$('#btn-back').addEventListener('click', () => (history.state?.pane ? history.back() : (history.replaceState(null, '', '/'), showList())));
+const backToList = () => (history.state?.pane ? history.back() : (history.replaceState(null, '', '/'), showList()));
+$('#btn-back').addEventListener('click', backToList);
+
+// Terminar: cierra Claude y su panel (si era el único, tmux borra la sesión) y vuelve a la lista.
+$('#btn-end').addEventListener('click', async () => {
+  const pane = currentPane;
+  if (!pane) return;
+  const s = lastSessions.find((x) => x.pane === pane);
+  const aviso = s?.state === 'working' ? '\n\nOjo: está trabajando y se cortará lo que esté haciendo.' : '';
+  const guardada = s?.state === 'term' || s?.state === 'ended' ? '' : '\nLa conversación queda guardada (ct -- --resume).';
+  if (!confirm(`¿Terminar la sesión ${s?.target || ''}?${guardada}${aviso}`)) return;
+  try { await api(`/api/panes/${encodeURIComponent(pane)}`, { method: 'DELETE' }); } catch (err) { alert(`No se pudo terminar: ${err.message}`); return; }
+  if (currentPane === pane) backToList();
+});
 window.addEventListener('popstate', (e) => (e.state?.pane ? openPane(e.state.pane, false) : showList()));
 
 document.addEventListener('visibilitychange', () => {
@@ -215,6 +228,7 @@ const HELP_BUTTONS = [
   ['#btn-image', 'Adjuntar imagen', 'Sube una foto a la laptop y pega su ruta para que Claude la vea.'],
   ['#btn-snippets', 'Comandos guardados', 'Guarda comandos frecuentes; tocarlo lo inserta y ▶ lo envía directo.'],
   ['#prompt .send', 'Enviar', 'Manda lo escrito y pulsa Enter. Con el cuadro vacío envía solo Enter. En computadora: Ctrl+Enter.'],
+  ['#btn-end', 'Terminar sesión', 'Cierra Claude y su sesión de tmux y vuelve a la lista. La conversación queda para --resume. No cierra si está abierta en una terminal de la laptop.'],
   ['#btn-history', 'Historial', 'Muestra toda la conversación como chat, más cómoda de leer.'],
 ];
 const helpRow = (el, name, desc) => {

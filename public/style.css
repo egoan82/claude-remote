@@ -142,6 +142,7 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 /* ---------- terminal ---------- */
 #term-view .bar { gap: 4px; padding: 8px 8px 6px; min-height: 58px; }
 .bar #term-title { font-size: 16px; }
+#btn-end { color: var(--danger); }
 .dot { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--dim); flex: 0 0 auto; transition: color .2s, background-color .2s; }
 .dot .i { width: 18px; height: 18px; }
 .dot .wifi-off, .dot.off .wifi { display: none; }

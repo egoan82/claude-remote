@@ -147,6 +147,8 @@ function translate(msg) {
 
 // Paneles abiertos ahora mismo desde la PWA (para no mandar push de lo que ya estás viendo).
 const watching = new Map();
+// PIDs de los `tmux attach` de la vista web, para no confundirlos con una terminal de la laptop.
+const webPids = new Set();
 
 // ---------- rutas ----------
 async function route(req, res) {
@@ -195,7 +197,7 @@ async function route(req, res) {
 
   const del = p.match(/^\/api\/panes\/(%25\d+|%\d+)$/);
   if (del && req.method === 'DELETE') {
-    await tmux.closePane(decodeURIComponent(del[1]));
+    await tmux.closePane(decodeURIComponent(del[1]), webPids);
     return send(res, 200, { ok: true });
   }
 
@@ -269,8 +271,9 @@ function attach(ws, pane, params) {
     { name: 'xterm-256color', cols, rows, cwd: os.homedir(), env });
 
   watching.set(pane, (watching.get(pane) || 0) + 1);
+  webPids.add(term.pid);
   term.onData((d) => { if (ws.readyState === ws.OPEN) ws.send(d); });
-  term.onExit(() => ws.close(1000, 'fin'));
+  term.onExit(() => { webPids.delete(term.pid); ws.close(1000, 'fin'); });
   ws.on('message', (raw) => {
     let m; try { m = JSON.parse(raw); } catch { return; }
     if (m.t === 'i' && typeof m.d === 'string') term.write(m.d);
