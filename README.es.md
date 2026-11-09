@@ -219,7 +219,7 @@ Cada sesión de Claude Code que corre en tmux aparece como una tarjeta:
   - 🟠 **Espera respuesta**: Claude te está esperando (un permiso o una elección). Brilla en ámbar y sale primero.
   - 🔶 **Trabajando**: Claude está trabajando.
   - 🟢 **Libre**: lista para otro prompt.
-- **Línea de datos**: el destino de tmux (`sesión:ventana.panel`), la carpeta y un ícono de monitor 🖥️ si la sesión también está abierta en otra terminal.
+- **Línea de datos**: el destino de tmux (`sesión:ventana.panel`), la cuenta de Claude (según `CLAUDE_CONFIG_DIR`, p. ej. `~/.claude-work` → `work`, o el comando con que se lanzó si Claude ya salió; cada comando de `CLAUDE_CMDS` tiene su color), la carpeta y un ícono de monitor 🖥️ si la sesión también está abierta en otra terminal.
 - **Vista previa**: las últimas líneas de la pantalla.
 - **Sin terminal**: si ninguna terminal tiene abierta la sesión (por ejemplo, cerraste la pestaña sin salir de Claude), la tarjeta lleva una barra roja a la izquierda y una franja que lo explica, con dos botones: **Abrir en la laptop** abre una ventana de terminal en la laptop unida a la sesión (`LAPTOP_TERMINAL`), y **Cerrar** la cierra tras confirmar. La conversación queda guardada y la retomas con `ct -- --resume`.
 - **Claude terminó**: si Claude ya salió y solo queda el shell, la tarjeta lo indica y solo ofrece **Cerrar** para quitarla. Si ese shell sigue abierto en una terminal de la laptop (lo que deja `ct`), al cerrarlo también se cierra esa terminal. Nunca aparecen shells con un proceso corriendo, ni shells de tmux abiertos a mano en una terminal.
@@ -238,7 +238,7 @@ Toca **Nueva** en la barra superior:
 
 1. **Proyecto**: busca entre tus repos. Aparece cada repositorio git que esté directamente dentro de una carpeta de `PROJECT_ROOTS`. Busca por nombre y por carpeta, sin importar tildes ni mayúsculas, y los usados hace poco salen primero. También puedes escribir una ruta que empiece con `/` o `~/`. **Enter** elige el primer resultado.
 2. **Comando**: qué comando o alias ejecutar (de `CLAUDE_CMDS`), o **Solo terminal (sin Claude)** para abrir solo un shell interactivo en esa carpeta. Recuerda el último que usaste.
-3. **Nombre (opcional)**: nombre de la sesión de tmux. Por defecto es el de la carpeta, con `-2`, `-3`… si ya existe.
+3. **Nombre (opcional)**: nombre de la sesión, en tmux y en Claude (se pasa como `--name`, igual que `ct -n`). Por defecto es el de la carpeta, con `-2`, `-3`… si ya existe.
 4. **Crear** la arranca en segundo plano: `tmux new-session -d -c <carpeta> $SHELL -ilc '<cmd>; exec $SHELL -il'`. Usa un shell interactivo de login, así funcionan tus alias y tu PATH, y al salir de Claude te queda el shell.
 
 <br clear="right">

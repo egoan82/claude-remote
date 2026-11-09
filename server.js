@@ -180,7 +180,9 @@ async function route(req, res) {
 
   if (p === '/api/sessions' && req.method === 'GET') {
     const panes = await tmux.listClaudePanes();
-    return send(res, 200, panes.map(({ pid, ...s }) => ({ ...s, title: transcript.title(pid) })));
+    // tone: color de la cuenta según su lugar en CLAUDE_CMDS, para que cada comando tenga uno distinto.
+    const tone = (a) => { const i = CLAUDE_CMDS.findIndex((c) => c === (a === 'default' ? 'claude' : `claude-${a}`)); return i < 0 ? 3 : i % 4; };
+    return send(res, 200, panes.map(({ pid, ...s }) => ({ ...s, title: transcript.title(pid), tone: s.account ? tone(s.account) : null })));
   }
 
   if (p === '/api/sessions' && req.method === 'POST') {
