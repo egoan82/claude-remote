@@ -2,18 +2,21 @@
 # ct: abre Claude Code dentro de tmux para poder tomarlo desde el celular.
 #   ct              -> sesión con el nombre de la carpeta; si ya existe, se une a ella
 #   ct -N           -> siempre una sesión nueva (myapp-2, myapp-3, …)
-#   ct -n nombre    -> sesión con ese nombre
+#   ct -n nombre    -> sesión con ese nombre (en tmux y en Claude, vía claude --name)
 #   ct -- args      -> sesión NUEVA pasando argumentos a claude (p. ej. ct -- --resume)
 # CLAUDE_CMD cambia el comando (puede ser un alias de tu shell): CLAUDE_CMD=claude-work ct
 set -euo pipefail
 name="$(basename "$PWD" | tr -c 'A-Za-z0-9_.\n-' '-')"
 force_new=0
+named=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -N) force_new=1; shift ;;
-    -n) name="$2"; shift 2 ;;
+    -n) [[ $# -ge 2 ]] || { echo "ct: falta el nombre después de -n" >&2; exit 2; }
+        name="$(printf '%s' "$2" | tr -c 'A-Za-z0-9_.-' '-')"; named=1; shift 2 ;;
     --) shift; force_new=1; break ;;
-    *) break ;;
+    *) echo "ct: argumento inesperado «$1». Para un nombre con espacios usa comillas (ct -n \"mi sesion\"); para pasar argumentos a claude: ct -- …" >&2
+       exit 2 ;;
   esac
 done
 cmd="${CLAUDE_CMD:-claude}"
@@ -27,7 +30,10 @@ for a in "$@"; do
   esac
 done
 
-if [[ -n "${TMUX:-}" ]]; then exec "$SHELL" -ic "$cmd $(printf '%q ' "$@")"; fi   # ya estamos dentro de tmux
+# Con -n, Claude también usa ese nombre (igual que /rename).
+if [[ -n "${TMUX:-}" ]]; then
+  [[ $named -eq 1 ]] && set -- --name "$name" "$@"
+  exec "$SHELL" -ic "$cmd $(printf '%q ' "$@")"; fi   # ya estamos dentro de tmux
 
 if tmux has-session -t "=$name" 2>/dev/null; then
   if [[ $force_new -eq 0 ]]; then
@@ -39,5 +45,6 @@ if tmux has-session -t "=$name" 2>/dev/null; then
   while tmux has-session -t "=$base-$i" 2>/dev/null; do i=$((i + 1)); done
   name="$base-$i"
 fi
+[[ $named -eq 1 ]] && set -- --name "$name" "$@"
 # Shell interactivo para que existan tus alias; al salir de claude queda el shell en la misma sesión.
 exec tmux new-session -s "$name" -c "$PWD" "$SHELL" -ilc "$cmd $(printf '%q ' "$@"); exec $SHELL -il"

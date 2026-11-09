@@ -313,7 +313,7 @@ make link-ct                     # symlink to ~/.local/bin/ct
 cd ~/projects/myapp
 ct                               # tmux session "myapp" running claude (attaches if it already exists)
 ct -N                            # always a new session: myapp-2, myapp-3, …
-ct -n api                        # session named "api"
+ct -n api                        # session named "api" in tmux and in Claude (quote names with spaces)
 ct -- --resume                   # new session, passing arguments to claude (pick an old conversation)
 ct -- --continue                 # new session continuing the last conversation
 CLAUDE_CMD=claude-work ct        # use another command or shell alias

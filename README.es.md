@@ -312,7 +312,7 @@ make link-ct                     # enlace en ~/.local/bin/ct
 cd ~/projects/myapp
 ct                               # sesión tmux "myapp" con claude (si ya existe, se une a ella)
 ct -N                            # siempre una sesión nueva: myapp-2, myapp-3, …
-ct -n api                        # sesión llamada "api"
+ct -n api                        # sesión "api" en tmux y en Claude (nombres con espacios, entre comillas)
 ct -- --resume                   # sesión nueva pasando argumentos a claude (elegir una conversación anterior)
 ct -- --continue                 # sesión nueva que continúa la última conversación
 CLAUDE_CMD=claude-work ct        # usar otro comando o alias de tu shell
