@@ -30,13 +30,13 @@ const MIME = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html
 // ---------------- demo data ----------------
 const now = Date.now();
 const SESSIONS = [
-  { pane: '%1', session: 'acme-shop', target: 'acme-shop:0.0', project: 'acme-shop', title: 'checkout-redesign', cwd: '/home/dev/projects/acme-shop', state: 'waiting', attached: true, activity: now,
+  { pane: '%1', session: 'acme-shop', account: 'work', tone: 0, target: 'acme-shop:0.0', project: 'acme-shop', title: 'checkout-redesign', cwd: '/home/dev/projects/acme-shop', state: 'waiting', attached: true, activity: now,
     preview: ['Do you want to make this edit to CartSummary.tsx?', '❯ 1. Yes', '  2. Yes, allow all edits during this session', '  3. No, and tell Claude what to do differently'] },
-  { pane: '%2', session: 'blog-engine', target: 'blog-engine:0.0', project: 'blog-engine', title: '', cwd: '/home/dev/projects/blog-engine', state: 'working', attached: false, activity: now - 1000,
+  { pane: '%2', session: 'blog-engine', account: 'personal', tone: 1, target: 'blog-engine:0.0', project: 'blog-engine', title: '', cwd: '/home/dev/projects/blog-engine', state: 'working', attached: false, activity: now - 1000,
     preview: ['● Running the test suite after adding pagination…', '✻ Testing… (34s · ↓ 1.2k tokens · esc to interrupt)'] },
-  { pane: '%3', session: 'data-pipeline', target: 'data-pipeline:0.0', project: 'data-pipeline', title: '', cwd: '/home/dev/code/data-pipeline', state: 'idle', attached: true, activity: now - 2000,
+  { pane: '%3', session: 'data-pipeline', account: 'work', tone: 0, target: 'data-pipeline:0.0', project: 'data-pipeline', title: '', cwd: '/home/dev/code/data-pipeline', state: 'idle', attached: true, activity: now - 2000,
     preview: ['● Done. The nightly job now retries failed batches.', '>', '  ? for shortcuts'] },
-  { pane: '%4', session: 'infra-terraform', target: 'infra-terraform:0.0', project: 'infra-terraform', title: '', cwd: '/home/dev/code/infra-terraform', state: 'term', attached: false, activity: now - 3000,
+  { pane: '%4', session: 'infra-terraform', account: null, tone: null, target: 'infra-terraform:0.0', project: 'infra-terraform', title: '', cwd: '/home/dev/code/infra-terraform', state: 'term', attached: false, activity: now - 3000,
     preview: ['dev@laptop:~/code/infra-terraform$ terraform plan', 'Plan: 2 to add, 1 to change, 0 to destroy.', 'dev@laptop:~/code/infra-terraform$'] },
 ];
 const PROJECTS = ['acme-shop', 'blog-engine', 'data-pipeline', 'design-system', 'dotfiles', 'infra-terraform', 'mobile-app']
