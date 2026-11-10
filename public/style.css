@@ -159,8 +159,9 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 .dot.on { color: var(--idle); background: rgba(61, 220, 132, .1); }
 .dot.off { color: var(--danger); background: rgba(229, 86, 75, .12); }
 
+/* content-box: el FitAddon mide el ancho del padre sin restar su padding/borde; con border-box pide columnas de más y se cortan. */
 #term {
-  flex: 1; min-height: 0; margin: 0 8px; padding: 8px 6px 6px 10px;
+  box-sizing: content-box; flex: 1; min-height: 0; margin: 0 8px; padding: 8px 6px 6px 10px;
   background: var(--term-bg); border: 1px solid var(--line-soft); border-radius: var(--r-md); overflow: hidden;
 }
 #term .xterm-viewport { background-color: var(--term-bg) !important; }
