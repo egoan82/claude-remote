@@ -34,6 +34,8 @@ const SESSIONS = [
     preview: ['Do you want to make this edit to CartSummary.tsx?', '❯ 1. Yes', '  2. Yes, allow all edits during this session', '  3. No, and tell Claude what to do differently'] },
   { pane: '%2', session: 'blog-engine', account: 'personal', tone: 1, target: 'blog-engine:0.0', project: 'blog-engine', title: '', cwd: '/home/dev/projects/blog-engine', state: 'working', attached: false, activity: now - 1000,
     preview: ['● Running the test suite after adding pagination…', '✻ Testing… (34s · ↓ 1.2k tokens · esc to interrupt)'] },
+  { pane: '%5', session: 'mobile-app', account: 'personal', tone: 1, target: 'mobile-app:0.0', project: 'mobile-app', title: 'offline-sync', cwd: '/home/dev/projects/mobile-app', state: 'agents', agents: 2, attached: true, activity: now - 1500,
+    preview: ['✻ Waiting for 2 background agents to finish', '  ◯ general-purpose  Writing offline sync tests   2m 10s · ↓ 18.4k tokens', '  ◯ Explore  Mapping the storage layer   48s · ↓ 6.1k tokens'] },
   { pane: '%3', session: 'data-pipeline', account: 'work', tone: 0, target: 'data-pipeline:0.0', project: 'data-pipeline', title: '', cwd: '/home/dev/code/data-pipeline', state: 'idle', attached: true, activity: now - 2000,
     preview: ['● Done. The nightly job now retries failed batches.', '>', '  ? for shortcuts'] },
   { pane: '%4', session: 'infra-terraform', account: null, tone: null, target: 'infra-terraform:0.0', project: 'infra-terraform', title: '', cwd: '/home/dev/code/infra-terraform', state: 'term', attached: false, activity: now - 3000,
