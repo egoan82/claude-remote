@@ -63,7 +63,18 @@ const HISTORY = [
     cmd: 'cd /home/dev/projects/blog-engine && npm run lint && npm test -- --reporter=dot --coverage | tee /tmp/test.log' }] },
   { role: 'user', text: 'Nice. Also add a Link header?', ts: day(0, 7, 38) },
   { role: 'assistant', text: 'Done — responses now include a `Link: <…?cursor=…>; rel="next"` header when there is a next page.\n\n- 48 tests pass\n- Old clients still get a plain array\n- Added `test/pagination.test.ts`', ts: day(0, 7, 40) },
+  { role: 'tools', ts: day(0, 7, 41), tools: [{ name: 'Bash', arg: 'npx playwright screenshot http://localhost:3000/posts /tmp/shots/posts-phone.png', cmd: 'npx playwright screenshot http://localhost:3000/posts /tmp/shots/posts-phone.png' }] },
+  { role: 'files', caption: 'The posts page with the new "Load more" button', files: ['/tmp/shots/posts-phone.png', '/tmp/shots/posts-desktop.png'], ts: day(0, 7, 42) },
 ];
+// Fake app screenshots that the history "sends" (served by the mocked /api/image).
+const POSTS = ['Shipping cursor pagination', 'Why we moved off OFFSET', 'Indexing created_at the right way', 'A tiny Link header helper', 'Testing paginated APIs'];
+const postsPage = (wide) => `<html><body style="margin:0;font:16px system-ui,sans-serif;background:#f7f5f1;color:#1d1b18">
+<header style="padding:18px 24px;background:#fff;border-bottom:1px solid #e7e2da;font-weight:700;font-size:20px">blog-engine</header>
+<main style="max-width:${wide ? 720 : 999}px;margin:0 auto;padding:20px">
+${POSTS.map((t, i) => `<article style="background:#fff;border:1px solid #e7e2da;border-radius:12px;padding:16px 18px;margin-bottom:12px"><div style="font-weight:600;font-size:18px">${t}</div><div style="color:#7a736a;font-size:14px;margin-top:6px">${i + 3} min read · dev team</div></article>`).join('')}
+<button style="display:block;width:100%;padding:14px;border:0;border-radius:12px;background:#ff7a45;color:#fff;font-size:16px;font-weight:600">Load more</button>
+</main></body></html>`;
+const IMAGES = {};
 const E = '\x1b[';
 const TERM = [
   `${E}38;5;209m✻${E}0m ${E}1mWelcome to Claude Code${E}0m`, '',
@@ -104,6 +115,7 @@ async function setup(page, { sessions = SESSIONS, term = TERM } = {}) {
     if (p === '/api/projects') return json(PROJECTS);
     if (p === '/api/commands') return json(['claude', 'claude --continue']);
     if (p === '/api/snippets') return json(SNIPPETS);
+    if (p === '/api/image') { const img = IMAGES[u.searchParams.get('path')]; return img ? route.fulfill({ status: 200, contentType: 'image/png', body: img }) : json({ error: 'no encontrado' }, 404); }
     if (p.startsWith('/api/')) return json({});
     const file = VENDOR[p] ? path.join(REPO, VENDOR[p]) : path.join(REPO, 'public', p === '/' ? 'index.html' : p);
     if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: '' });
@@ -113,6 +125,13 @@ async function setup(page, { sessions = SESSIONS, term = TERM } = {}) {
 }
 
 const browser = await chromium.launch();
+for (const [file, wide] of [['/tmp/shots/posts-phone.png', false], ['/tmp/shots/posts-desktop.png', true]]) {
+  const ctx = await browser.newContext({ viewport: wide ? { width: 1280, height: 800 } : { width: 390, height: 760 }, deviceScaleFactor: wide ? 1 : 2 });
+  const page = await ctx.newPage();
+  await page.setContent(postsPage(wide));
+  IMAGES[file] = await page.screenshot();
+  await ctx.close();
+}
 const shot = async (name, { phone = true, sessions, term, act } = {}) => {
   const ctx = await browser.newContext(phone
     ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, serviceWorkers: 'block', locale: 'es' }
@@ -144,6 +163,7 @@ await shot('phone-history', { act: (p) => openHistory(p, { scroll: 'top' }) });
 await shot('phone-snippets', { act: async (p) => { await openTerm(p); await p.click('#btn-snippets'); await p.waitForSelector('#snippet-list li[data-id]'); } });
 await shot('phone-help', { act: async (p) => { await openTerm(p); await p.click('#btn-help'); await p.waitForSelector('#help-body li'); } });
 const ENDED = SESSIONS.map((s) => (s.pane === '%3' ? { ...s, state: 'ended', preview: ['Resume this session with:', `claude --resume ${RESUME_ID}`, 'dev@laptop:~/code/data-pipeline$'] } : s));
+await shot('phone-viewer', { act: async (p) => { await openHistory(p); await p.waitForTimeout(400); await p.click('#history-chat .thumb'); await p.waitForFunction(() => document.querySelector('#viewer-img').naturalWidth > 0); } });
 await shot('phone-ended', { sessions: ENDED, term: TERM_ENDED, act: async (p) => { await p.click('.card[data-pane="%3"]'); await p.waitForSelector('#relaunch:not(.hidden)'); await p.waitForTimeout(600); } });
 await shot('desktop-list', { phone: false });
 await shot('desktop-terminal', { phone: false, act: openTerm });

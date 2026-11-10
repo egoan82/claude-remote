@@ -290,7 +290,10 @@ Toca el ícono del reloj para leer la conversación completa con calma:
 - **El contexto de plugins** que se inyecta al iniciar la sesión (p. ej. claude-mem, context-mode) y **el resumen de compactación** aparecen como tarjetas plegadas con su origen y tamaño; tócalas para leerlas.
 - El botón 🔍 abre un **buscador** (sin distinguir mayúsculas ni tildes) en mensajes, comandos y notas de plugins. Resalta las coincidencias; el contador y ↑ ↓ (o Enter / Shift+Enter) saltan entre ellas, de la más reciente a la más vieja, cargando mensajes anteriores y abriendo tarjetas plegadas si hace falta.
 - El botón 🔧 oculta o muestra las herramientas y se recuerda en el dispositivo. **Ir al final** baja al último mensaje. En conversaciones largas se dibujan primero los últimos 300 mensajes; **Cargar anteriores** trae el resto.
+- **Imágenes**: los archivos que Claude manda con `SendUserFile` salen como miniaturas, y las rutas de imágenes en los mensajes son enlaces. Al tocar una se abre el visor (también se abre tocando la ruta de una imagen en la terminal).
 - Si no encuentra la transcripción (p. ej. una sesión que no es de Claude Code), muestra el scrollback de tmux como texto.
+
+<p align="center"><img src="docs/screenshots/phone-viewer.png" width="240" alt="Visor de imágenes"><br><sub>Visor de imágenes: un toque alterna ajustada / tamaño real; descarga desde la barra</sub></p>
 
 El contenido de la transcripción siempre se escapa antes de darle formato.
 

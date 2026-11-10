@@ -291,7 +291,10 @@ Tap the clock icon for a readable version of the whole conversation:
 - **Plugin context** injected at session start (e.g. claude-mem, context-mode) and the **compaction summary** show up as collapsed cards with their source and size; tap to read them.
 - The 🔍 button opens a **search** bar (case- and accent-insensitive) over messages, commands and plugin notes. Matches are highlighted; the counter and ↑ ↓ (or Enter / Shift+Enter) jump between them, newest first, loading older messages and opening collapsed cards as needed.
 - The 🔧 button hides or shows tool calls and is remembered on the device. **Ir al final** jumps to the bottom. Long conversations render the last 300 messages first; **Cargar anteriores** loads earlier ones.
+- **Images**: files Claude sends with `SendUserFile` appear as thumbnails, and image paths in messages are links. Tapping one opens the image viewer (also reachable by tapping an image path in the terminal).
 - If the transcript can't be found (e.g. a session not started by Claude Code), it shows the tmux scrollback as plain text.
+
+<p align="center"><img src="docs/screenshots/phone-viewer.png" width="240" alt="Image viewer"><br><sub>Image viewer: tap to switch fit / actual size, download from the header</sub></p>
 
 Transcript content is always HTML-escaped before formatting.
 
