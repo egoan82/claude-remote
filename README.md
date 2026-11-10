@@ -20,7 +20,7 @@ and lets you answer, approve, interrupt and start sessions from anywhere, privat
 
 > [!NOTE]
 > The app's interface is in **Spanish** (for example, *Nueva* = New, *Espera respuesta* = Waiting for you,
-> *Trabajando* = Working, *Libre* = Idle, *Detener* = Stop). This README translates every label it mentions.
+> *Trabajando* = Working, *Esperando agente* = Waiting for an agent, *Libre* = Idle, *Detener* = Stop). This README translates every label it mentions.
 
 ---
 
@@ -56,7 +56,7 @@ The server is a single Node.js process (no framework, no build step) bound to `1
 
 | | |
 |---|---|
-| 🗂️ **Session list with live status** | Finds every tmux pane whose process tree runs `claude` and shows it as a card. The status is **Espera respuesta** (waiting for you, amber and pulsing), **Trabajando** (working, orange spinner) or **Libre** (idle, green), next to the last lines on screen. Sessions waiting for you are sorted first, and the tab title shows how many there are. The list refreshes every 3 s; pull down to refresh it right away. |
+| 🗂️ **Session list with live status** | Finds every tmux pane whose process tree runs `claude` and shows it as a card. The status is **Espera respuesta** (waiting for you, amber and pulsing), **Trabajando** (working, orange spinner), **Esperando agente** (Claude finished its turn but a background agent is still running, purple) or **Libre** (idle, green), next to the last lines on screen. Sessions waiting for you are sorted first, and the tab title shows how many there are. The list refreshes every 3 s; pull down to refresh it right away. |
 | 🖥️ **Live terminal** | Opens the real tmux session in [xterm.js](https://xtermjs.org) over a WebSocket. It's the same session you see on your computer, not a copy. |
 | ⌨️ **Special keys + Detener** | A two-row key pad with plain-text labels: `1` `2` `3` to answer menus, `Esc`, `Tab`, `⇧Tab` to switch modes, `←` `↑` `↓` `→`, `Enter`, font size `A−`/`A+`, and a red **Detener** button that sends **Ctrl+C**. |
 | ✍️ **Prompt box** | Write long prompts comfortably. Multi-line text is sent as a bracketed paste, so line breaks don't submit early. **Ctrl/⌘+Enter** sends. |
@@ -102,7 +102,7 @@ Phone (PWA) ──HTTPS via Tailscale──▶ tailscale serve ──▶ claude-
 </details>
 
 - **Discovery**: `tmux list-panes -a`, then for each pane it walks the process tree in `/proc` looking for a process named `claude`.
-- **Status**: guessed from what's on screen. A permission or choice prompt means *waiting*, "esc to interrupt" means *working*, anything else is *idle*.
+- **Status**: guessed from what's on screen. A permission or choice prompt means *waiting*, "esc to interrupt" means *working*, "Waiting for N background agent" means *waiting for an agent*, anything else is *idle*.
 - **Terminal**: `node-pty` runs `tmux attach-session -t <pane>` and streams it to xterm.js. Closing the page detaches; it never kills the session.
 - **History**: finds the session's transcript through `/proc/<pid>/environ` (`CLAUDE_CONFIG_DIR`) and `<config>/sessions/<pid>.json`, then parses the last 8 MB of the `.jsonl`.
 - **Notifications**: Claude Code `Notification` and `Stop` hooks `curl` the local server, which sends a Web Push (VAPID) to your subscribed devices. No notification is sent for a session you're currently viewing in the app.
@@ -220,6 +220,7 @@ Every Claude Code session running in tmux appears as a card:
 - **Status badge**:
   - 🟠 **Espera respuesta**: Claude is waiting for you (a permission or choice prompt). These cards glow amber and are sorted first.
   - 🔶 **Trabajando**: Claude is working.
+  - 🟣 **Esperando agente**: Claude finished its turn and is waiting for a background agent to finish.
   - 🟢 **Libre**: idle, ready for a new prompt.
 - **Meta line**: the tmux target (`session:window.pane`), the Claude account (from `CLAUDE_CONFIG_DIR`, e.g. `~/.claude-work` → `work`, or the launch command once Claude has exited; each `CLAUDE_CMDS` entry gets its own color), the working directory, and a 🖥️ monitor icon if the session is also attached in another terminal.
 - **Preview**: the last lines on screen.

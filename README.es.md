@@ -55,7 +55,7 @@ El servidor es un solo proceso de Node.js (sin frameworks ni paso de compilació
 
 | | |
 |---|---|
-| 🗂️ **Lista de sesiones con estado en vivo** | Encuentra cada panel de tmux en cuyo árbol de procesos corre `claude` y lo muestra como tarjeta. El estado es **Espera respuesta** (ámbar y pulsando), **Trabajando** (naranja, girando) o **Libre** (verde), junto a las últimas líneas de la pantalla. Las que esperan respuesta salen primero y el título de la pestaña dice cuántas hay. Se actualiza cada 3 s; jala hacia abajo para recargar al instante. |
+| 🗂️ **Lista de sesiones con estado en vivo** | Encuentra cada panel de tmux en cuyo árbol de procesos corre `claude` y lo muestra como tarjeta. El estado es **Espera respuesta** (ámbar y pulsando), **Trabajando** (naranja, girando), **Esperando agente** (Claude terminó su turno pero un agente sigue corriendo en segundo plano, morado) o **Libre** (verde), junto a las últimas líneas de la pantalla. Las que esperan respuesta salen primero y el título de la pestaña dice cuántas hay. Se actualiza cada 3 s; jala hacia abajo para recargar al instante. |
 | 🖥️ **Terminal en vivo** | Abre la sesión real de tmux en [xterm.js](https://xtermjs.org) por WebSocket. Es la misma sesión que ves en la computadora, no una copia. |
 | ⌨️ **Teclas especiales + Detener** | Un teclado de dos filas con etiquetas de texto: `1` `2` `3` para responder menús, `Esc`, `Tab`, `⇧Tab` para cambiar de modo, `←` `↑` `↓` `→`, `Enter`, tamaño de letra `A−`/`A+` y un botón rojo **Detener** que manda **Ctrl+C**. |
 | ✍️ **Caja de prompt** | Para escribir prompts largos con comodidad. El texto de varias líneas se manda como "pegado" (bracketed paste) para que los saltos de línea no lo envíen antes de tiempo. **Ctrl/⌘+Enter** envía. |
@@ -101,7 +101,7 @@ Celular (PWA) ──HTTPS por Tailscale──▶ tailscale serve ──▶ claud
 </details>
 
 - **Detección**: `tmux list-panes -a` y, por cada panel, recorre el árbol de procesos en `/proc` buscando un proceso llamado `claude`.
-- **Estado**: se deduce de lo que hay en pantalla. Un aviso de permiso o de elegir opción es *Espera respuesta*, "esc to interrupt" es *Trabajando* y cualquier otra cosa es *Libre*.
+- **Estado**: se deduce de lo que hay en pantalla. Un aviso de permiso o de elegir opción es *Espera respuesta*, "esc to interrupt" es *Trabajando*, "Waiting for N background agent" es *Esperando agente* y cualquier otra cosa es *Libre*.
 - **Terminal**: `node-pty` ejecuta `tmux attach-session -t <panel>` y lo transmite a xterm.js. Cerrar la página solo se desconecta; nunca cierra la sesión.
 - **Historial**: encuentra la transcripción de la sesión con `/proc/<pid>/environ` (`CLAUDE_CONFIG_DIR`) y `<config>/sessions/<pid>.json`, y lee los últimos 8 MB del `.jsonl`.
 - **Avisos**: los hooks `Notification` y `Stop` de Claude Code llaman con `curl` al servidor local, que manda un Web Push (VAPID) a tus dispositivos suscritos. No avisa de una sesión que estás viendo en ese momento en la app.
@@ -219,6 +219,7 @@ Cada sesión de Claude Code que corre en tmux aparece como una tarjeta:
 - **Estado**:
   - 🟠 **Espera respuesta**: Claude te está esperando (un permiso o una elección). Brilla en ámbar y sale primero.
   - 🔶 **Trabajando**: Claude está trabajando.
+  - 🟣 **Esperando agente**: Claude terminó su turno y espera a que acabe un agente en segundo plano.
   - 🟢 **Libre**: lista para otro prompt.
 - **Línea de datos**: el destino de tmux (`sesión:ventana.panel`), la cuenta de Claude (según `CLAUDE_CONFIG_DIR`, p. ej. `~/.claude-work` → `work`, o el comando con que se lanzó si Claude ya salió; cada comando de `CLAUDE_CMDS` tiene su color), la carpeta y un ícono de monitor 🖥️ si la sesión también está abierta en otra terminal.
 - **Vista previa**: las últimas líneas de la pantalla.

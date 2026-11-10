@@ -3,7 +3,7 @@
   --bg: #111111; --term-bg: #0a0a0a; --panel: #1c1c1c; --raised: #242424; --line: #2e2e2e; --line-soft: #262626;
   --text: #f2efe9; --muted: #9a948b; --dim: #6f6a63;
   --accent: #ff7a45; --accent-hi: #ff9466; --on-accent: #1f0d04;
-  --waiting: #ffb020; --working: #ff7a45; --idle: #3ddc84; --danger: #e5564b;
+  --waiting: #ffb020; --working: #ff7a45; --idle: #3ddc84; --agents: #a78bfa; --danger: #e5564b;
   --font: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
   --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
@@ -83,6 +83,7 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 .card.waiting { --state: var(--waiting); border-color: rgba(255, 176, 32, .55); box-shadow: 0 0 0 1px rgba(255, 176, 32, .12), 0 10px 30px -14px rgba(255, 176, 32, .55); }
 .card.working { --state: var(--working); }
 .card.idle { --state: var(--idle); }
+.card.agents { --state: var(--agents); }
 .card.idle::before { opacity: .5; }
 /* Sin terminal abierta: barra roja (salvo si espera respuesta, que manda el ámbar). */
 .card.orphan:not(.waiting) { --state: var(--danger); }
@@ -139,6 +140,8 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 .badge.waiting { background: var(--waiting); color: #2b1a00; animation: ping 1.6s ease-out infinite; }
 .badge.working { color: var(--working); background: rgba(255, 122, 69, .12); box-shadow: inset 0 0 0 1px rgba(255, 122, 69, .4); }
 .badge.working .i { animation: spin 1.1s linear infinite; }
+.badge.agents { color: var(--agents); background: rgba(167, 139, 250, .12); box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .4); }
+.badge.agents .i { animation: breathe 1.6s ease-in-out infinite; }
 .badge.idle { color: var(--idle); background: rgba(61, 220, 132, .08); }
 .badge.ended { color: var(--muted); background: var(--raised); }
 @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(255, 176, 32, .55); } 70%, 100% { box-shadow: 0 0 0 8px rgba(255, 176, 32, 0); } }

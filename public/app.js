@@ -6,7 +6,7 @@ const api = async (url, opts = {}) => {
   return res.headers.get('content-type')?.includes('json') ? res.json() : res.text();
 };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const STATE = { waiting: 'Espera respuesta', working: 'Trabajando', idle: 'Libre', ended: 'Claude terminó', term: 'Terminal' };
+const STATE = { waiting: 'Espera respuesta', working: 'Trabajando', agents: 'Esperando agente', idle: 'Libre', ended: 'Claude terminó', term: 'Terminal' };
 // Iconos (trazos estilo Lucide) para las plantillas de abajo.
 const ICON = {
   folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
@@ -15,6 +15,7 @@ const ICON = {
   waiting: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
   working: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
   idle: '<path d="M20 6 9 17l-5-5"/>',
+  agents: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   ended: '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>',
   file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
@@ -242,7 +243,7 @@ $('#btn-back').addEventListener('click', () => (history.state?.pane ? history.ba
 // Terminar: escribe /exit en Claude, como hacerlo a mano. Claude muestra cómo retomar la conversación y queda la terminal.
 $('#btn-end').addEventListener('click', () => {
   const s = lastSessions.find((x) => x.pane === currentPane);
-  const busy = s?.state === 'working' || s?.state === 'waiting';
+  const busy = s?.state === 'working' || s?.state === 'waiting' || s?.state === 'agents';
   const aviso = busy ? '\n\nOjo: se cancela lo que esté haciendo o preguntando.' : '';
   if (!confirm(`¿Salir de Claude (/exit)?\nQueda la terminal con el comando para retomar la conversación.${aviso}`)) return;
   // Esc cancela lo que esté en curso; Ctrl+U borra lo que haya en la caja de Claude.
