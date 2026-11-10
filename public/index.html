@@ -71,6 +71,16 @@
     <button id="btn-history-end" class="hidden" aria-label="Ir al final"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>Ir al final</button>
   </dialog>
 
+  <!-- Visor de imágenes (rutas que aparecen en la terminal o el historial) -->
+  <dialog id="viewer">
+    <header class="bar">
+      <h1><span id="viewer-name"></span></h1>
+      <button class="ghost icon" id="btn-viewer-download" aria-label="Descargar" title="Descargar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg></button>
+      <button class="ghost icon" id="btn-close-viewer" aria-label="Cerrar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </header>
+    <div id="viewer-body"><img id="viewer-img" alt=""><p id="viewer-err" class="hidden"></p></div>
+  </dialog>
+
   <!-- Ayuda de las teclas -->
   <dialog id="help">
     <header class="bar">

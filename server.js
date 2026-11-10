@@ -135,6 +135,22 @@ function saveImage(req, limit = 20 * 1024 * 1024) {
   });
 }
 
+// Imágenes que aparecen en la terminal (capturas que Claude deja en /tmp, etc.). Solo imágenes:
+// se resuelven los enlaces simbólicos antes de mirar la extensión, así «x.png -> ~/.ssh/id_rsa» no pasa.
+const IMAGE_MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
+
+function serveImage(res, raw) {
+  const p = String(raw || '').replace(/^~(?=\/)/, os.homedir());
+  if (!path.isAbsolute(p)) return send(res, 400, { error: 'ruta inválida' });
+  let file, st;
+  try { file = fs.realpathSync(p); st = fs.statSync(file); } catch { return send(res, 404, { error: 'no encontrado' }); }
+  const type = IMAGE_MIME[path.extname(file).toLowerCase()];
+  if (!type || !st.isFile()) return send(res, 415, { error: 'solo imágenes (png, jpg, gif, webp)' });
+  if (st.size > 50 * 1024 * 1024) return send(res, 413, { error: 'imagen muy grande' });
+  res.writeHead(200, { 'content-type': type, 'content-length': st.size, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' });
+  fs.createReadStream(file).pipe(res);
+}
+
 // Textos de aviso de Claude Code (vienen en inglés) traducidos para el push.
 function translate(msg) {
   if (!msg) return 'Claude necesita tu atención';
@@ -224,6 +240,7 @@ async function route(req, res) {
   }
 
   if (p === '/api/upload' && req.method === 'POST') return send(res, 201, { path: await saveImage(req) });
+  if (p === '/api/image' && req.method === 'GET') return serveImage(res, url.searchParams.get('path'));
 
   // Comandos guardados para insertar en el cuadro de texto.
   if (p === '/api/snippets' && req.method === 'GET') return send(res, 200, snippets.list());

@@ -111,7 +111,85 @@ function ensureTerm() {
   term.loadAddon(fit);
   term.open($('#term'));
   term.onData((d) => sendInput(d));
+  term.registerLinkProvider({ provideLinks: imageLinks });
   new ResizeObserver(() => fitAndResize()).observe($('#term'));
+}
+
+// ---------------- imágenes ----------------
+// Rutas absolutas (o con ~/) a png/jpg/gif/webp. No toma el punto final de una frase ni «a.png.bak».
+const IMG_RE = /(?<![\w./~-])(?:~\/|\/)[^\s'"`<>()[\]{}|*?,;]*?\.(?:png|jpe?g|gif|webp)(?![\w-]|\.\w)/gi;
+
+// Enlaces de la terminal: une las filas que xterm partió (isWrapped) y mapea cada carácter a su celda,
+// así una ruta larga partida en dos filas sigue siendo un solo enlace.
+function imageLinks(y, cb) {
+  const buf = term.buffer.active;
+  let first = y - 1, last = y - 1;
+  while (first > 0 && buf.getLine(first)?.isWrapped) first--;
+  while (buf.getLine(last + 1)?.isWrapped) last++;
+  if (last - first > 30) return cb(undefined);
+  let text = ''; const pos = [];
+  for (let r = first; r <= last; r++) {
+    const line = buf.getLine(r);
+    for (let x = 0; x < line.length; x++) {
+      const cell = line.getCell(x);
+      if (!cell || cell.getWidth() === 0) continue; // segunda mitad de un carácter ancho
+      const ch = cell.getChars() || ' ';
+      text += ch;
+      for (let k = 0; k < ch.length; k++) pos.push({ x: x + 1, y: r + 1 });
+    }
+  }
+  const links = [];
+  for (const m of text.matchAll(IMG_RE)) {
+    const start = pos[m.index], end = pos[m.index + m[0].length - 1];
+    if (start.y > y || end.y < y) continue;
+    links.push({ range: { start, end }, text: m[0], decorations: { underline: true, pointerCursor: true }, activate: () => openImage(m[0]) });
+  }
+  cb(links.length ? links : undefined);
+}
+
+let viewerPath = '';
+function openImage(p) {
+  viewerPath = p;
+  const img = $('#viewer-img'), err = $('#viewer-err');
+  $('#viewer-name').textContent = p.split('/').pop();
+  $('#viewer-name').title = p;
+  err.classList.add('hidden'); img.classList.remove('hidden', 'zoom');
+  img.onerror = async () => {
+    img.classList.add('hidden');
+    let msg = 'No se pudo cargar la imagen';
+    try { msg = (await (await fetch(img.src)).json()).error || msg; } catch { /* sin detalle */ }
+    err.textContent = `${msg}: ${p}`; err.classList.remove('hidden');
+  };
+  img.src = `/api/image?path=${encodeURIComponent(p)}&t=${Date.now()}`;
+  $('#viewer').showModal();
+}
+// Tocar la imagen alterna entre ajustada a la pantalla y tamaño real (con scroll).
+$('#viewer-img').addEventListener('click', (e) => e.currentTarget.classList.toggle('zoom'));
+$('#btn-close-viewer').addEventListener('click', () => $('#viewer').close());
+$('#btn-viewer-download').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = $('#viewer-img').src; a.download = viewerPath.split('/').pop();
+  document.body.append(a); a.click(); a.remove();
+});
+
+// Historial: convierte las rutas de imagen del texto ya pintado en enlaces al visor.
+function linkImages(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => (n.parentElement.closest('a, button, .img-link') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+  });
+  const nodes = [];
+  while (walker.nextNode()) if (walker.currentNode.data.search(IMG_RE) >= 0) nodes.push(walker.currentNode);
+  for (const n of nodes) {
+    const frag = document.createDocumentFragment(); let at = 0;
+    for (const m of n.data.matchAll(IMG_RE)) {
+      frag.append(n.data.slice(at, m.index));
+      const a = document.createElement('a');
+      a.href = '#'; a.className = 'img-link'; a.dataset.img = m[0]; a.textContent = m[0];
+      frag.append(a); at = m.index + m[0].length;
+    }
+    frag.append(n.data.slice(at));
+    n.replaceWith(frag);
+  }
 }
 
 function fitAndResize() {
@@ -506,6 +584,13 @@ function renderMsg(m, prevDay) {
     const kb = Math.max(1, Math.round(m.text.length / 1024));
     return [`${sep}<details class="msg note"><summary>${icon('info')}<b>${esc(label)}</b><span>${esc(m.title)} · ${kb} KB</span>${icon('chevron', 'i chev')}</summary><pre>${esc(m.text)}</pre></details>`, day];
   }
+  if (m.role === 'files') {
+    const isImg = (f) => /\.(png|jpe?g|gif|webp)$/i.test(f);
+    const items = m.files.map((f) => (isImg(f)
+      ? `<button type="button" class="thumb img-link" data-img="${esc(f)}" title="${esc(f)}"><img loading="lazy" alt="${esc(f.split('/').pop())}" src="/api/image?path=${encodeURIComponent(f)}"></button>`
+      : `<span class="file" title="${esc(f)}">${esc(f.split('/').pop())}</span>`)).join('');
+    return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body">${m.caption ? `<div class="prose"><p>${esc(m.caption)}</p></div>` : ''}<div class="thumbs">${items}</div>${time}</div></div>`, day];
+  }
   if (m.role === 'assistant') return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body"><div class="prose">${md(m.text)}</div>${time}</div></div>`, day];
   const t = m.tools;
   if (t.length === 1) {
@@ -535,6 +620,7 @@ function renderHistory(prepend) {
     chat.innerHTML = more + html;
     chat.scrollTop = chat.scrollHeight;
   }
+  linkImages(chat);
 }
 
 const setHideTools = (on) => {
@@ -549,6 +635,8 @@ $('#btn-hide-tools').addEventListener('click', () => {
 });
 $('#history-chat').addEventListener('click', async (e) => {
   if (e.target.closest('#btn-history-more')) { renderHistory(true); return; }
+  const img = e.target.closest('.img-link');
+  if (img) { e.preventDefault(); e.stopPropagation(); openImage(img.dataset.img); return; }
   const btn = e.target.closest('.copy-btn');
   if (!btn) return;
   e.preventDefault(); e.stopPropagation();
@@ -597,7 +685,7 @@ function foldMap(s) {
   return { str, map };
 }
 const msgText = (m) => (m.tools ? m.tools.map((t) => `${t.name} ${t.arg ?? ''} ${t.cmd ?? ''}`).join('\n')
-  : m.role === 'note' ? `${m.title ?? ''} ${m.text}` : m.text ?? '');
+  : m.role === 'note' ? `${m.title ?? ''} ${m.text}` : m.role === 'files' ? `${m.caption} ${m.files.join(' ')}` : m.text ?? '');
 let hits = [], hitAt = -1, searchTimer;
 const canHL = typeof Highlight === 'function' && CSS.highlights;
 
