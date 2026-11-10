@@ -220,7 +220,7 @@ Every Claude Code session running in tmux appears as a card:
 - **Status badge**:
   - 🟠 **Espera respuesta**: Claude is waiting for you (a permission or choice prompt). These cards glow amber and are sorted first.
   - 🔶 **Trabajando**: Claude is working.
-  - 🟣 **Esperando agente**: Claude finished its turn and is waiting for a background agent to finish.
+  - 🟣 **Esperando agente**: Claude finished its turn and is waiting for a background agent to finish (with several, the badge shows the count, e.g. *Esperando 3 agentes*).
   - 🟢 **Libre**: idle, ready for a new prompt.
 - **Meta line**: the tmux target (`session:window.pane`), the Claude account (from `CLAUDE_CONFIG_DIR`, e.g. `~/.claude-work` → `work`, or the launch command once Claude has exited; each `CLAUDE_CMDS` entry gets its own color), the working directory, and a 🖥️ monitor icon if the session is also attached in another terminal.
 - **Preview**: the last lines on screen.

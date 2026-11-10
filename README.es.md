@@ -219,7 +219,7 @@ Cada sesión de Claude Code que corre en tmux aparece como una tarjeta:
 - **Estado**:
   - 🟠 **Espera respuesta**: Claude te está esperando (un permiso o una elección). Brilla en ámbar y sale primero.
   - 🔶 **Trabajando**: Claude está trabajando.
-  - 🟣 **Esperando agente**: Claude terminó su turno y espera a que acabe un agente en segundo plano.
+  - 🟣 **Esperando agente**: Claude terminó su turno y espera a que acabe un agente en segundo plano (si son varios, la insignia dice cuántos, p. ej. *Esperando 3 agentes*).
   - 🟢 **Libre**: lista para otro prompt.
 - **Línea de datos**: el destino de tmux (`sesión:ventana.panel`), la cuenta de Claude (según `CLAUDE_CONFIG_DIR`, p. ej. `~/.claude-work` → `work`, o el comando con que se lanzó si Claude ya salió; cada comando de `CLAUDE_CMDS` tiene su color), la carpeta y un ícono de monitor 🖥️ si la sesión también está abierta en otra terminal.
 - **Vista previa**: las últimas líneas de la pantalla.

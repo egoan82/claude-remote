@@ -57,7 +57,7 @@ async function refresh() {
     list.sort((a, b) => (a.state === 'waiting' ? -1 : 0) - (b.state === 'waiting' ? -1 : 0) || b.activity - a.activity);
     $('#sessions').innerHTML = list.length ? list.map((s) => `
       <li class="card ${s.state}${s.attached || s.state === 'term' ? '' : ' orphan'}" data-pane="${esc(s.pane)}">
-        <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${STATE[s.state]}</span></div>
+        <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${s.state === 'agents' && s.agents > 1 ? `Esperando ${s.agents} agentes` : STATE[s.state]}</span></div>
         <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span>${s.account ? `<span class="acct acct-${Number(s.tone) || 0}" title="Cuenta de Claude">${icon('bot')}${esc(s.account)}</span>` : ''}<span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : ''}</div>
         <pre>${esc(s.preview.join('\n'))}</pre>
         ${s.state === 'term' ? `<div class="orphan">${icon('term')}<span>Terminal sin Claude${s.attached ? ', abierta también en la laptop' : ''}.</span><div class="acts">${s.attached ? '' : `<button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button>`}<button class="close-pane" type="button">Cerrar</button></div></div>`
