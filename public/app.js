@@ -483,6 +483,18 @@ async function copyText(text, host) {
   return ok;
 }
 
+// Tabla markdown -> <table>. Sin fila separadora (|---|) se deja como texto, tal cual llegó.
+function tableHtml(rows) {
+  const cells = (r) => r.replace(/^\|/, '').replace(/\|$/, '').split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, '|'));
+  const sep = rows[1] && /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$/.test(rows[1]) ? cells(rows[1]) : null;
+  if (!sep) return `<pre class="tbl">${esc(rows.join('\n'))}</pre>`;
+  const align = sep.map((c) => (/^:-+:$/.test(c) ? 'center' : /-:$/.test(c) ? 'right' : ''));
+  const td = (tag, c, i) => `<${tag}${align[i] ? ` style="text-align:${align[i]}"` : ''}>${inline(c)}</${tag}>`;
+  const head = cells(rows[0]).map((c, i) => td('th', c, i)).join('');
+  const body = rows.slice(2).map((r) => `<tr>${cells(r).map((c, i) => td('td', c, i)).join('')}</tr>`).join('');
+  return `<div class="tblwrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
 function md(text) {
   const out = [];
   const parts = text.split(/^```[^\n]*\n?/m);
@@ -498,7 +510,7 @@ function md(text) {
     const flush = () => {
       if (para.length) out.push(`<p>${para.map(inline).join('<br>')}</p>`);
       if (list) out.push(`<${list.tag}>${list.items.map((x) => `<li>${inline(x)}</li>`).join('')}</${list.tag}>`);
-      if (table.length) out.push(`<pre class="tbl">${esc(table.join('\n'))}</pre>`);
+      if (table.length) out.push(tableHtml(table));
       para = []; list = null; table = [];
     };
     for (const line of chunk.split('\n')) {

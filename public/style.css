@@ -277,6 +277,12 @@ dialog[open] { animation: rise .2s ease-out; }
 .prose code { font: 13px var(--mono); background: var(--raised); border: 1px solid var(--line-soft); padding: 1px 5px; border-radius: 5px; }
 .prose pre { margin: 0 0 10px; padding: 12px 14px; background: var(--term-bg); border: 1px solid var(--line-soft); border-radius: var(--r-sm);
   overflow-x: auto; font: 12.5px/1.5 var(--mono); color: #e4dfd6; white-space: pre; overflow-wrap: normal; }
+.tblwrap { width: fit-content; max-width: 100%; margin: 0 0 10px; overflow-x: auto; border: 1px solid var(--line-soft); border-radius: var(--r-sm); }
+.prose table { width: max-content; border-collapse: collapse; font-size: 13.5px; line-height: 1.45; overflow-wrap: normal; }
+.prose th, .prose td { max-width: 26ch; padding: 7px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line-soft); }
+.prose th { background: var(--raised); font-weight: 600; }
+.prose tbody tr:last-child td { border-bottom: 0; }
+.prose th + th, .prose td + td { border-left: 1px solid var(--line-soft); }
 .prose pre code { background: none; border: 0; padding: 0; font: inherit; }
 .codewrap { position: relative; }
 .codewrap pre { padding-right: 46px; }
