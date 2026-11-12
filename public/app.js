@@ -586,6 +586,8 @@ const dayName = (d) => {
   return diff === 0 ? 'Hoy' : diff === 1 ? 'Ayer' : d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
 };
 
+const thumb = (f) => `<button type="button" class="thumb img-link" data-img="${esc(f)}" title="${esc(f)}"><img loading="lazy" alt="${esc(f.split('/').pop())}" src="/api/image?path=${encodeURIComponent(f)}"></button>`;
+
 function renderMsg(m, prevDay) {
   const d = m.ts ? new Date(m.ts) : null;
   const day = d && !isNaN(d) ? d.toDateString() : prevDay;
@@ -599,12 +601,15 @@ function renderMsg(m, prevDay) {
   }
   if (m.role === 'files') {
     const isImg = (f) => /\.(png|jpe?g|gif|webp)$/i.test(f);
-    const items = m.files.map((f) => (isImg(f)
-      ? `<button type="button" class="thumb img-link" data-img="${esc(f)}" title="${esc(f)}"><img loading="lazy" alt="${esc(f.split('/').pop())}" src="/api/image?path=${encodeURIComponent(f)}"></button>`
-      : `<span class="file" title="${esc(f)}">${esc(f.split('/').pop())}</span>`)).join('');
+    const items = m.files.map((f) => (isImg(f) ? thumb(f) : `<span class="file" title="${esc(f)}">${esc(f.split('/').pop())}</span>`)).join('');
     return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body">${m.caption ? `<div class="prose"><p>${esc(m.caption)}</p></div>` : ''}<div class="thumbs">${items}</div>${time}</div></div>`, day];
   }
-  if (m.role === 'assistant') return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body"><div class="prose">${md(m.text)}</div>${time}</div></div>`, day];
+  if (m.role === 'assistant') {
+    // Capturas que Claude nombra por su ruta sin mandarlas con SendUserFile: también como miniaturas.
+    const imgs = [...new Set(Array.from(m.text.matchAll(IMG_RE), (x) => x[0]))].slice(0, 20);
+    const strip = imgs.length ? `<div class="thumbs">${imgs.map(thumb).join('')}</div>` : '';
+    return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body"><div class="prose">${md(m.text)}</div>${strip}${time}</div></div>`, day];
+  }
   const t = m.tools;
   if (t.length === 1) {
     return [`${sep}<details class="msg tools one"><summary>${icon(toolIcon(t[0].name))}<b>${esc(t[0].name)}</b><span>${esc(t[0].arg)}</span></summary>${toolRow(t[0])}</details>`, day];
@@ -658,6 +663,8 @@ $('#history-chat').addEventListener('click', async (e) => {
   btn.innerHTML = icon(ok ? 'check' : 'x'); btn.classList.toggle('done', ok);
   setTimeout(() => { btn.innerHTML = icon('copy'); btn.classList.remove('done'); }, 1500);
 });
+// Miniatura de una imagen que ya no existe (scratchpad borrado, ruta con variables): se quita en vez de verse rota.
+$('#history-chat').addEventListener('error', (e) => { if (e.target.matches?.('.thumb img')) e.target.closest('.thumb').remove(); }, true);
 $('#history-chat').addEventListener('scroll', (e) => {
   const c = e.target;
   $('#btn-history-end').classList.toggle('hidden', c.scrollHeight - c.scrollTop - c.clientHeight < 300);
