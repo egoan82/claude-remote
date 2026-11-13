@@ -602,12 +602,17 @@ function renderMsg(m, prevDay) {
   if (m.role === 'files') {
     const isImg = (f) => /\.(png|jpe?g|gif|webp)$/i.test(f);
     const items = m.files.map((f) => (isImg(f) ? thumb(f) : `<span class="file" title="${esc(f)}">${esc(f.split('/').pop())}</span>`)).join('');
-    return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body">${m.caption ? `<div class="prose"><p>${esc(m.caption)}</p></div>` : ''}<div class="thumbs">${items}</div>${time}</div></div>`, day];
+    const cap = m.caption || (m.seen ? 'Capturas que revisó' : '');
+    return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body">${cap ? `<div class="prose"><p>${esc(cap)}</p></div>` : ''}<div class="thumbs">${items}</div>${time}</div></div>`, day];
   }
   if (m.role === 'assistant') {
     // Capturas que Claude nombra por su ruta sin mandarlas con SendUserFile: también como miniaturas.
-    const imgs = [...new Set(Array.from(m.text.matchAll(IMG_RE), (x) => x[0]))].slice(0, 20);
-    const strip = imgs.length ? `<div class="thumbs">${imgs.map(thumb).join('')}</div>` : '';
+    const imgs = Array.from(m.text.matchAll(IMG_RE), (x) => x[0]);
+    // «Están en `/ruta/caps/` (por ejemplo `a.png`)»: nombres sueltos se buscan en la carpeta que nombró.
+    const dir = [...m.text.matchAll(/(?<![\w.~-])(?:~\/|\/)[^\s'"`<>()[\]{}|*?,;]+\//g)].pop()?.[0];
+    if (dir) for (const x of m.text.matchAll(/(?<![\w./~-])[\w.-]+\.(?:png|jpe?g|gif|webp)(?![\w-]|\.\w)/gi)) imgs.push(dir + x[0]);
+    const strip0 = [...new Set(imgs)].slice(0, 20);
+    const strip = strip0.length ? `<div class="thumbs">${strip0.map(thumb).join('')}</div>` : '';
     return [`${sep}<div class="msg claude">${icon('sparkle', 'i avatar')}<div class="body"><div class="prose">${md(m.text)}</div>${strip}${time}</div></div>`, day];
   }
   const t = m.tools;
