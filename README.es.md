@@ -211,7 +211,7 @@ Hace falta HTTPS para instalar la PWA y para recibir avisos; por eso pasa por `t
 
 ### Lista de sesiones
 
-<img src="docs/screenshots/phone-list.png" width="260" align="right" alt="Lista de sesiones">
+<p align="center"><img src="docs/screenshots/phone-list.png" width="260" alt="Lista de sesiones"></p>
 
 Cada sesión de Claude Code que corre en tmux aparece como una tarjeta:
 
@@ -230,11 +230,9 @@ Cada sesión de Claude Code que corre en tmux aparece como una tarjeta:
 Toca una tarjeta para abrirla. La lista se actualiza cada 3 segundos mientras está a la vista; **jala hacia abajo** para recargar al instante.
 Sin sesiones aparece un mensaje que explica cómo crear una. Si no hay conexión con el servidor, lo indica un aviso rojo.
 
-<br clear="right">
-
 ### Sesión nueva ("Nueva")
 
-<img src="docs/screenshots/phone-new-session.png" width="260" align="right" alt="Diálogo de sesión nueva">
+<p align="center"><img src="docs/screenshots/phone-new-session.png" width="240" alt="Diálogo de sesión nueva">&nbsp;&nbsp;<img src="docs/screenshots/phone-new-folder.png" width="240" alt="Explorador de carpetas"><br><sub><b>Repos</b>: tus repos git · <b>Carpetas</b>: explora cualquier carpeta</sub></p>
 
 Toca **Nueva** en la barra superior:
 
@@ -243,13 +241,9 @@ Toca **Nueva** en la barra superior:
 3. **Nombre (opcional)**: nombre de la sesión, en tmux y en Claude (se pasa como `--name`, igual que `ct -n`). Por defecto es el de la carpeta, con `-2`, `-3`… si ya existe.
 4. **Crear** la arranca en segundo plano: `tmux new-session -d -c <carpeta> $SHELL -ilc '<cmd>; exec $SHELL -il'`. Usa un shell interactivo de login, así funcionan tus alias y tu PATH, y al salir de Claude te queda el shell.
 
-<br clear="right">
-
-<p align="center"><img src="docs/screenshots/phone-new-folder.png" width="240" alt="Explorador de carpetas"><br><sub><b>Carpetas</b>: explora cualquier carpeta</sub></p>
-
 ### Terminal
 
-<img src="docs/screenshots/phone-terminal.png" width="260" align="right" alt="Vista de terminal">
+<p align="center"><img src="docs/screenshots/phone-terminal.png" width="260" alt="Vista de terminal"></p>
 
 La sesión real de tmux, en vivo. La barra muestra el nombre, un indicador de **conexión** (Wi-Fi verde si está conectada; Wi-Fi tachado en rojo si no, y se reconecta sola) un botón **?** que explica cada tecla y botón (con sus mismos iconos), un botón rojo de **terminar sesión** (icono de encendido) que, tras confirmar, escribe `/exit` en Claude para que muestre su resumen de salida habitual y quede el shell (solo aparece mientras Claude está abierto). Cuando Claude ya salió, una franja sobre las teclas ofrece **Retomar** (vuelve a la misma conversación con `--resume <id>`, leído del mensaje de salida de Claude, o `--continue`) y **Nueva** (una conversación nueva), ambas con el comando con que se lanzó la sesión, y el botón de **historial**.
 
@@ -277,13 +271,11 @@ Se guardan en la computadora en `$TMPDIR/claude-remote-uploads/` (permisos 0700;
 
 **🔖 Comandos guardados**: el botón del marcador junto a la caja de texto abre tus comandos. Toca uno para insertarlo en la caja (y revisarlo antes) o ▶ para enviarlo directo; ahí mismo se editan o borran. Arriba hay un buscador que filtra por nombre o texto (sin importar tildes ni mayúsculas). Lo que ya tengas escrito en la caja aparece listo para guardarlo. Se guardan en la computadora en `data/snippets.json`, así todos los dispositivos ven la misma lista.
 
-<br clear="right">
-
 <p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Ayuda de teclas">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Comandos guardados">&nbsp;&nbsp;<img src="docs/screenshots/phone-ended.png" width="240" alt="Tras terminar Claude: Retomar o Nueva"><br><sub>Ayuda de teclas (?) · Comandos guardados · Tras /exit: Retomar o Nueva</sub></p>
 
 ### Historial
 
-<img src="docs/screenshots/phone-history.png" width="260" align="right" alt="Vista de historial">
+<p align="center"><img src="docs/screenshots/phone-history.png" width="260" alt="Vista de historial"></p>
 
 Toca el ícono del reloj para leer la conversación completa con calma:
 
@@ -299,8 +291,6 @@ Toca el ícono del reloj para leer la conversación completa con calma:
 <p align="center"><img src="docs/screenshots/phone-viewer.png" width="240" alt="Visor de imágenes"><br><sub>Visor de imágenes: un toque alterna ajustada / tamaño real; descarga desde la barra</sub></p>
 
 El contenido de la transcripción siempre se escapa antes de darle formato.
-
-<br clear="right">
 
 ### Escritorio
 

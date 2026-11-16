@@ -212,7 +212,7 @@ HTTPS is required both to install the PWA and to receive push, which is why it g
 
 ### Session list
 
-<img src="docs/screenshots/phone-list.png" width="260" align="right" alt="Session list">
+<p align="center"><img src="docs/screenshots/phone-list.png" width="260" alt="Session list"></p>
 
 Every Claude Code session running in tmux appears as a card:
 
@@ -231,11 +231,9 @@ Every Claude Code session running in tmux appears as a card:
 Tap a card to open it. The list refreshes every 3 seconds while visible; **pull down** to refresh right away.
 With no sessions you get an empty state that explains how to start one. If the server can't be reached, a red banner says so.
 
-<br clear="right">
-
 ### New session (“Nueva”)
 
-<img src="docs/screenshots/phone-new-session.png" width="260" align="right" alt="New session dialog">
+<p align="center"><img src="docs/screenshots/phone-new-session.png" width="240" alt="New session dialog">&nbsp;&nbsp;<img src="docs/screenshots/phone-new-folder.png" width="240" alt="Folder browser"><br><sub><b>Repos</b>: your git repos · <b>Carpetas</b>: browse any folder</sub></p>
 
 Tap **Nueva** in the header:
 
@@ -244,13 +242,9 @@ Tap **Nueva** in the header:
 3. **Nombre (opcional)**: session name, in tmux and in Claude (passed as `--name`, like `ct -n`). It defaults to the folder name, with `-2`, `-3`… added if that name is taken.
 4. **Crear** starts it detached: `tmux new-session -d -c <dir> $SHELL -ilc '<cmd>; exec $SHELL -il'`. It uses an interactive login shell, so your aliases and PATH work, and you get a shell back when Claude exits.
 
-<br clear="right">
-
-<p align="center"><img src="docs/screenshots/phone-new-folder.png" width="240" alt="Folder browser"><br><sub><b>Carpetas</b>: browse any folder</sub></p>
-
 ### Terminal
 
-<img src="docs/screenshots/phone-terminal.png" width="260" align="right" alt="Terminal view">
+<p align="center"><img src="docs/screenshots/phone-terminal.png" width="260" alt="Terminal view"></p>
 
 The real tmux session, live. The header shows the session name, a **connection** indicator (green Wi-Fi when connected, red crossed-out Wi-Fi when disconnected; it reconnects automatically) a **?** button that explains every key and button (with the same icons), a red **end session** button (power icon) that, after confirming, types `/exit` into Claude so it prints its usual exit summary and the shell stays open (only shown while Claude is running). Once Claude has exited, a strip above the keys offers **Retomar** (reopens the same conversation with `--resume <id>`, read from Claude's exit message, or `--continue`) and **Nueva** (a fresh conversation), both using the command the session was started with, and the **history** button.
 
@@ -278,13 +272,11 @@ The file is saved on the computer in `$TMPDIR/claude-remote-uploads/` (mode 0700
 
 **🔖 Saved commands**: the bookmark button next to the prompt box opens your saved commands. Tap one to insert it into the box (to review it first), or ▶ to send it right away; edit or delete them there too. A search box at the top filters them by name or text (accents and case ignored). Whatever is already typed in the box is pre-filled so you can save it. They are stored on the computer in `data/snippets.json`, so every device sees the same list.
 
-<br clear="right">
-
 <p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Key help">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Saved commands">&nbsp;&nbsp;<img src="docs/screenshots/phone-ended.png" width="240" alt="After ending Claude: Retomar or Nueva"><br><sub>Key help (?) · Saved commands · After /exit: Retomar or Nueva</sub></p>
 
 ### History
 
-<img src="docs/screenshots/phone-history.png" width="260" align="right" alt="History view">
+<p align="center"><img src="docs/screenshots/phone-history.png" width="260" alt="History view"></p>
 
 Tap the clock icon for a readable version of the whole conversation:
 
@@ -300,8 +292,6 @@ Tap the clock icon for a readable version of the whole conversation:
 <p align="center"><img src="docs/screenshots/phone-viewer.png" width="240" alt="Image viewer"><br><sub>Image viewer: tap to switch fit / actual size, download from the header</sub></p>
 
 Transcript content is always HTML-escaped before formatting.
-
-<br clear="right">
 
 ### Desktop
 
