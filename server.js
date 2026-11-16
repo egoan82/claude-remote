@@ -110,6 +110,16 @@ function listProjects() {
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// Explorador de carpetas del formulario «Nueva sesión»: subcarpetas visibles de una ruta (por defecto ~).
+function listDirs(dir) {
+  const real = fs.realpathSync(String(dir || '~').replace(/^~/, os.homedir()));
+  const dirs = fs.readdirSync(real, { withFileTypes: true })
+    .filter((e) => !e.name.startsWith('.') && (e.isDirectory() || (e.isSymbolicLink() && isDir(path.join(real, e.name)))))
+    .map((e) => e.name).sort((a, b) => a.localeCompare(b)).slice(0, 500);
+  return { path: real, parent: real === '/' ? null : path.dirname(real), dirs };
+}
+const isDir = (f) => { try { return fs.statSync(f).isDirectory(); } catch { return false; } };
+
 // Imágenes subidas desde el celular: se guardan en /tmp y Claude las lee por su ruta.
 const UPLOAD_DIR = path.join(os.tmpdir(), 'claude-remote-uploads');
 const IMAGE_EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
@@ -249,6 +259,7 @@ async function route(req, res) {
   if (snip && req.method === 'DELETE') { snippets.remove(snip[1]); return send(res, 200, { ok: true }); }
 
   if (p === '/api/projects') return send(res, 200, listProjects());
+  if (p === '/api/dirs' && req.method === 'GET') return send(res, 200, listDirs(url.searchParams.get('path')));
   if (p === '/api/commands') return send(res, 200, CLAUDE_CMDS);
   if (p === '/api/push/key') return send(res, 200, { key: push.publicKey });
   if (p === '/api/push/subscribe' && req.method === 'POST') { push.subscribe(await readJson(req)); return send(res, 201, { ok: true }); }

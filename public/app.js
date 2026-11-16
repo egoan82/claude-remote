@@ -786,17 +786,49 @@ const folderOf = (dir) => dir.split('/').slice(-2, -1)[0] || '';
 function pickProject(dir) {
   $('#new-dir').value = dir;
   const p = projects.find((x) => x.dir === dir);
-  $('#new-dir-label').textContent = dir ? `Elegido: ${p ? `${p.name} · ${folderOf(dir)}` : dir}` : 'Ningún proyecto elegido';
+  $('#new-dir-label').textContent = dir ? `Elegido: ${p ? `${p.name} · ${folderOf(dir)}` : dir}`
+    : $('#new-cmd').value === TERMINAL ? 'Sin proyecto: la terminal abre en ~' : 'Ningún proyecto elegido';
   $('#new-dir-label').classList.toggle('muted', !dir);
   renderProjects();
 }
+$('#new-cmd').addEventListener('change', () => pickProject($('#new-dir').value));
 
 // Filtra por todas las palabras escritas (sin importar tildes ni mayúsculas) en el nombre o la carpeta.
 // Sin texto muestra primero los usados hace poco.
 const rank = (p, q) => { const n = fold(p.name); return n === q ? 2 : n.startsWith(q.split(/\s+/)[0]) ? 1 : 0; };
 
+// Explorador: null = lista de proyectos; si no, { path, parent, dirs } de la carpeta abierta.
+let browse = null;
+async function openDir(dir) {
+  try { browse = await api(`/api/dirs?path=${encodeURIComponent(dir)}`); } catch (err) { $('#new-dir-label').textContent = err.message; return; }
+  $('#new-search').value = '';
+  setMode('dirs');
+  pickProject(browse.path); // la carpeta abierta queda elegida
+}
+const chooseDir = (dir) => (browse ? openDir(dir) : pickProject(dir));
+function setMode(mode) {
+  for (const b of $('#pick-mode').children) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+  $('#new-search').placeholder = mode === 'dirs' ? 'Filtrar carpetas…' : 'Buscar repo o escribir una ruta…';
+}
+$('#pick-mode').addEventListener('click', (e) => {
+  const mode = e.target.closest('button')?.dataset.mode;
+  if (mode === 'dirs' && !browse) openDir($('#new-dir').value || '~');
+  if (mode === 'repos' && browse) { browse = null; $('#new-search').value = ''; setMode('repos'); renderProjects(); }
+});
+
+function renderBrowse(q) {
+  const join = (n) => (browse.path === '/' ? '/' : `${browse.path}/`) + n;
+  const list = browse.dirs.filter((n) => fold(n).includes(q));
+  $('#project-list').innerHTML = (browse.parent ? `<li role="option" tabindex="0" class="up" data-dir="${esc(browse.parent)}">
+      <span class="pname">${icon('folder')}<span>..</span></span><span class="pfolder">subir</span></li>` : '')
+    + list.map((n) => `<li role="option" tabindex="0" data-dir="${esc(join(n))}">
+      <span class="pname">${icon('folder')}<span>${esc(n)}</span></span></li>`).join('')
+    + (!list.length ? `<li class="more">${q ? 'Sin coincidencias' : 'Sin subcarpetas'}</li>` : '');
+}
+
 function renderProjects() {
   const q = fold($('#new-search').value.trim());
+  if (browse) return renderBrowse(q);
   const recent = recentDirs();
   let list;
   if (!q) {
@@ -825,21 +857,23 @@ $('#new-search').addEventListener('input', () => {
 });
 $('#project-list').addEventListener('click', (e) => {
   const li = e.target.closest('li[data-dir]');
-  if (li) pickProject(li.dataset.dir);
+  if (li) chooseDir(li.dataset.dir);
 });
 $('#project-list').addEventListener('keydown', (e) => {
   const li = e.target.closest('li[data-dir]');
-  if (li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pickProject(li.dataset.dir); }
+  if (li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); chooseDir(li.dataset.dir); }
 });
 $('#new-search').addEventListener('keydown', (e) => {
   // Enter en el buscador elige el primer resultado en vez de enviar el formulario.
   if (e.key !== 'Enter') return;
   e.preventDefault();
-  const first = $('#project-list li[data-dir]');
-  if (first) pickProject(first.dataset.dir);
+  const first = $('#project-list li[data-dir]:not(.up)');
+  if (first) chooseDir(first.dataset.dir);
 });
 
 $('#btn-new').addEventListener('click', async () => {
+  browse = null;
+  setMode('repos');
   $('#new-search').value = '';
   $('#new-name').value = '';
   pickProject('');
@@ -852,19 +886,22 @@ $('#btn-new').addEventListener('click', async () => {
     $('#new-cmd').innerHTML = cmds.map((c) => `<option>${esc(c)}</option>`).join('') + `<option value="${TERMINAL}">Solo terminal (sin Claude)</option>`;
     $('#new-cmd').value = store.get('cmd', cmds[0]);
     if (!$('#new-cmd').value) $('#new-cmd').value = cmds[0];
+    pickProject('');
   } catch {}
 });
 $('#btn-cancel-new').addEventListener('click', () => $('#new').close());
 $('#new-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const dir = $('#new-dir').value;
+  const cmd = $('#new-cmd').value;
+  const picked = $('#new-dir').value;
+  // «Solo terminal» sin proyecto abre en la carpeta personal.
+  const dir = picked || (cmd === TERMINAL ? '~' : '');
   if (!dir) { $('#new-search').focus(); $('#new-dir-label').textContent = 'Elige un proyecto de la lista'; return; }
   try {
-    const cmd = $('#new-cmd').value;
     store.set('cmd', cmd);
     const opts = cmd === TERMINAL ? { terminal: true } : { cmd };
     await api('/api/sessions', { method: 'POST', body: JSON.stringify({ dir, name: $('#new-name').value || undefined, ...opts }) });
-    store.set('recentDirs', JSON.stringify([dir, ...recentDirs().filter((d) => d !== dir)].slice(0, 5)));
+    if (picked) store.set('recentDirs', JSON.stringify([dir, ...recentDirs().filter((d) => d !== dir)].slice(0, 5)));
     $('#new').close();
     setTimeout(refresh, 800); // da tiempo a que arranque claude
   } catch (err) { alert(err.message); }

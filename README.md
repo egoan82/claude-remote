@@ -239,8 +239,8 @@ With no sessions you get an empty state that explains how to start one. If the s
 
 Tap **Nueva** in the header:
 
-1. **Proyecto**: search your repos. Every git repository directly inside a `PROJECT_ROOTS` folder is listed. The search matches name and parent folder, ignores accents and case, and shows recently used projects first. You can also type a path starting with `/` or `~/`. **Enter** picks the first result.
-2. **Comando**: which command or alias to run (from `CLAUDE_CMDS`), or **Solo terminal (sin Claude)** for a plain interactive shell in that folder. It remembers your last choice.
+1. **Proyecto**: search your repos. Every git repository directly inside a `PROJECT_ROOTS` folder is listed. The search matches name and parent folder, ignores accents and case, and shows recently used projects first. You can also type a path starting with `/` or `~/`. **Enter** picks the first result. Switch the toggle above the search from **Repos** to **Carpetas** to browse any folder instead: tap a folder to open and select it, `..` goes up one level.
+2. **Comando**: which command or alias to run (from `CLAUDE_CMDS`), or **Solo terminal (sin Claude)** for a plain interactive shell in that folder (with no folder chosen it starts in `~`). It remembers your last choice.
 3. **Nombre (opcional)**: session name, in tmux and in Claude (passed as `--name`, like `ct -n`). It defaults to the folder name, with `-2`, `-3`… added if that name is taken.
 4. **Crear** starts it detached: `tmux new-session -d -c <dir> $SHELL -ilc '<cmd>; exec $SHELL -il'`. It uses an interactive login shell, so your aliases and PATH work, and you get a shell back when Claude exits.
 
