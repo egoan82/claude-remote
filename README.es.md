@@ -245,6 +245,8 @@ Toca **Nueva** en la barra superior:
 
 <br clear="right">
 
+<p align="center"><img src="docs/screenshots/phone-new-folder.png" width="240" alt="Explorador de carpetas"><br><sub><b>Carpetas</b>: explora cualquier carpeta</sub></p>
+
 ### Terminal
 
 <img src="docs/screenshots/phone-terminal.png" width="260" align="right" alt="Vista de terminal">

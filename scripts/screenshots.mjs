@@ -43,6 +43,11 @@ const SESSIONS = [
 ];
 const PROJECTS = ['acme-shop', 'blog-engine', 'data-pipeline', 'design-system', 'dotfiles', 'infra-terraform', 'mobile-app']
   .map((n) => ({ name: n, dir: `/home/dev/${['data-pipeline', 'infra-terraform', 'dotfiles'].includes(n) ? 'code' : 'projects'}/${n}` }));
+// Árbol de carpetas falso para el modo «Carpetas» del diálogo de sesión nueva.
+const DIRS = {
+  '/home/dev': ['code', 'Desktop', 'Documents', 'Downloads', 'notes', 'projects', 'scratch'],
+  '/home/dev/projects': ['acme-shop', 'blog-engine', 'design-system', 'mobile-app', 'prototypes'],
+};
 const SNIPPETS = [
   { id: 'a', name: 'Tests', text: 'npm test -- --watch=false' },
   { id: 'b', name: 'Revisar PR', text: '/code-review high' },
@@ -115,6 +120,10 @@ async function setup(page, { sessions = SESSIONS, term = TERM } = {}) {
     if (/\/history$/.test(p)) return json({ messages: HISTORY });
     if (/\/relaunch$/.test(p)) return json({ cmd: 'claude', resume: RESUME_ID });
     if (p === '/api/projects') return json(PROJECTS);
+    if (p === '/api/dirs') {
+      const d = (u.searchParams.get('path') || '~').replace(/^~/, '/home/dev');
+      return json({ path: d, parent: d === '/' ? null : path.dirname(d), dirs: DIRS[d] || [] });
+    }
     if (p === '/api/commands') return json(['claude', 'claude --continue']);
     if (p === '/api/snippets') return json(SNIPPETS);
     if (p === '/api/image') { const img = IMAGES[u.searchParams.get('path')]; return img ? route.fulfill({ status: 200, contentType: 'image/png', body: img }) : json({ error: 'no encontrado' }, 404); }
@@ -160,6 +169,7 @@ const openHistory = async (page, { scroll = 'bottom', expand = false } = {}) => 
 await shot('phone-list');
 await shot('phone-empty', { sessions: [] });
 await shot('phone-new-session', { act: async (p) => { await p.click('#btn-new'); await p.waitForSelector('#project-list li'); await p.fill('#new-search', 'shop'); await p.dispatchEvent('#new-search', 'input'); await p.click('#project-list li[data-dir]'); } });
+await shot('phone-new-folder', { act: async (p) => { await p.click('#btn-new'); await p.waitForSelector('#project-list li'); await p.click('#pick-mode [data-mode=dirs]'); await p.click('#project-list li[data-dir="/home/dev/projects"]'); await p.waitForSelector('#project-list li[data-dir$="/prototypes"]'); await p.mouse.move(0, 0); } });
 await shot('phone-terminal', { act: openTerm });
 await shot('phone-history', { act: (p) => openHistory(p, { scroll: 'top' }) });
 await shot('phone-snippets', { act: async (p) => { await openTerm(p); await p.click('#btn-snippets'); await p.waitForSelector('#snippet-list li[data-id]'); } });
