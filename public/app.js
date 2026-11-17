@@ -31,6 +31,7 @@ const ICON = {
   play: '<path d="M6 3 20 12 6 21Z"/>',
   pencil: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
   trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
   empty: '<path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
 };
 const icon = (n, c = 'i') => `<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
@@ -786,10 +787,48 @@ const folderOf = (dir) => dir.split('/').slice(-2, -1)[0] || '';
 function pickProject(dir) {
   $('#new-dir').value = dir;
   const p = projects.find((x) => x.dir === dir);
-  $('#new-dir-label').textContent = dir ? `Elegido: ${p ? `${p.name} · ${folderOf(dir)}` : dir}`
+  $('#new-dir-label').textContent = dir ? `Elegido: ${p ? `${p.name} · ${folderOf(dir)}` : short(dir)}`
     : $('#new-cmd').value === TERMINAL ? 'Sin proyecto: la terminal abre en ~' : 'Ningún proyecto elegido';
   $('#new-dir-label').classList.toggle('muted', !dir);
+  renderFavButton();
   renderProjects();
+}
+
+// Favoritos: rutas absolutas guardadas en el servidor (compartidas entre dispositivos).
+let favs = [];
+const HOME_RE = /^~(?=\/|$)/;
+let home = ''; // carpeta personal real, para mostrar ~ y reconocer rutas escritas con ~
+const short = (d) => (home && (d === home || d.startsWith(`${home}/`)) ? `~${d.slice(home.length)}` : d);
+const favOf = (dir) => favs.find((f) => f === dir || (home && f === dir.replace(HOME_RE, home)));
+function renderFavButton() {
+  const dir = $('#new-dir').value;
+  const on = Boolean(dir && favOf(dir));
+  $('#btn-fav').classList.toggle('hidden', !dir);
+  $('#btn-fav').setAttribute('aria-pressed', String(on));
+  $('#btn-fav span').textContent = on ? 'Quitar de favoritos' : 'Favorito';
+}
+async function toggleFav(dir) {
+  const f = favOf(dir);
+  try {
+    favs = f ? await api(`/api/favorites?dir=${encodeURIComponent(f)}`, { method: 'DELETE' })
+      : await api('/api/favorites', { method: 'POST', body: JSON.stringify({ dir }) });
+  } catch (err) { $('#new-dir-label').textContent = err.message; return; }
+  renderFavButton();
+  renderProjects();
+}
+$('#btn-fav').addEventListener('click', () => { if ($('#new-dir').value) toggleFav($('#new-dir').value); });
+
+function renderFavs(q) {
+  const terms = q.split(/\s+/).filter(Boolean);
+  const list = favs.filter((d) => terms.every((t) => fold(d).includes(t)));
+  const sel = $('#new-dir').value;
+  $('#project-list').innerHTML = list.map((d) => `
+    <li role="option" tabindex="0" class="fav" data-dir="${esc(d)}" aria-selected="${d === sel}">
+      <span class="pname">${icon('star')}<span>${esc(d.split('/').pop() || d)}</span></span>
+      <span class="pfolder">${esc(short(d.split('/').slice(0, -1).join('/') || '/'))}</span>
+      <button type="button" class="unfav" data-unfav="${esc(d)}" aria-label="Quitar de favoritos">${icon('x')}</button>
+    </li>`).join('')
+    + (!list.length ? `<li class="more">${q ? 'Sin coincidencias' : 'Aún no tienes favoritos: elige una carpeta en Repos o Carpetas y toca «Favorito».'}</li>` : '');
 }
 $('#new-cmd').addEventListener('change', () => pickProject($('#new-dir').value));
 
@@ -799,6 +838,7 @@ const rank = (p, q) => { const n = fold(p.name); return n === q ? 2 : n.startsWi
 
 // Explorador: null = lista de proyectos; si no, { path, parent, dirs } de la carpeta abierta.
 let browse = null;
+let mode = 'repos'; // 'favs' | 'repos' | 'dirs'
 async function openDir(dir) {
   try { browse = await api(`/api/dirs?path=${encodeURIComponent(dir)}`); } catch (err) { $('#new-dir-label').textContent = err.message; return; }
   $('#new-search').value = '';
@@ -806,14 +846,16 @@ async function openDir(dir) {
   pickProject(browse.path); // la carpeta abierta queda elegida
 }
 const chooseDir = (dir) => (browse ? openDir(dir) : pickProject(dir));
-function setMode(mode) {
+function setMode(m) {
+  mode = m;
   for (const b of $('#pick-mode').children) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
-  $('#new-search').placeholder = mode === 'dirs' ? 'Filtrar carpetas…' : 'Buscar repo o escribir una ruta…';
+  $('#new-search').placeholder = { dirs: 'Filtrar carpetas…', favs: 'Filtrar favoritos o escribir una ruta…' }[mode] || 'Buscar repo o escribir una ruta…';
 }
 $('#pick-mode').addEventListener('click', (e) => {
-  const mode = e.target.closest('button')?.dataset.mode;
-  if (mode === 'dirs' && !browse) openDir($('#new-dir').value || '~');
-  if (mode === 'repos' && browse) { browse = null; $('#new-search').value = ''; setMode('repos'); renderProjects(); }
+  const m = e.target.closest('button')?.dataset.mode;
+  if (!m || m === mode) return;
+  if (m === 'dirs') return openDir($('#new-dir').value || '~');
+  browse = null; $('#new-search').value = ''; setMode(m); renderProjects();
 });
 
 function renderBrowse(q) {
@@ -829,6 +871,7 @@ function renderBrowse(q) {
 function renderProjects() {
   const q = fold($('#new-search').value.trim());
   if (browse) return renderBrowse(q);
+  if (mode === 'favs') return renderFavs(q);
   const recent = recentDirs();
   let list;
   if (!q) {
@@ -856,11 +899,14 @@ $('#new-search').addEventListener('input', () => {
   if (/^[~/]/.test(v)) pickProject(v); else renderProjects();
 });
 $('#project-list').addEventListener('click', (e) => {
+  const un = e.target.closest('[data-unfav]');
+  if (un) { e.stopPropagation(); return toggleFav(un.dataset.unfav); }
   const li = e.target.closest('li[data-dir]');
   if (li) chooseDir(li.dataset.dir);
 });
 $('#project-list').addEventListener('keydown', (e) => {
   const li = e.target.closest('li[data-dir]');
+  if (e.target.closest('[data-unfav]')) return;
   if (li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); chooseDir(li.dataset.dir); }
 });
 $('#new-search').addEventListener('keydown', (e) => {
@@ -873,14 +919,17 @@ $('#new-search').addEventListener('keydown', (e) => {
 
 $('#btn-new').addEventListener('click', async () => {
   browse = null;
-  setMode('repos');
+  setMode(favs.length ? 'favs' : 'repos');
   $('#new-search').value = '';
   $('#new-name').value = '';
   pickProject('');
   $('#new').showModal();
   try {
-    const [list, cmds] = await Promise.all([api('/api/projects'), api('/api/commands')]);
+    const [list, cmds, fl, h] = await Promise.all([api('/api/projects'), api('/api/commands'), api('/api/favorites'), home ? null : api('/api/dirs?path=~')]);
     projects = list;
+    favs = fl;
+    if (h) home = h.path;
+    setMode(favs.length ? 'favs' : 'repos');
     renderProjects();
     // «Solo terminal» abre un shell sin Claude.
     $('#new-cmd').innerHTML = cmds.map((c) => `<option>${esc(c)}</option>`).join('') + `<option value="${TERMINAL}">Solo terminal (sin Claude)</option>`;

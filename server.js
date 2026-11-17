@@ -11,6 +11,7 @@ import * as tmux from './lib/tmux.js';
 import * as push from './lib/push.js';
 import * as transcript from './lib/transcript.js';
 import * as snippets from './lib/snippets.js';
+import * as favorites from './lib/favorites.js';
 
 const ROOT = path.dirname(new URL(import.meta.url).pathname);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -257,6 +258,11 @@ async function route(req, res) {
   if (p === '/api/snippets' && req.method === 'POST') return send(res, 201, snippets.save(await readJson(req)));
   const snip = p.match(/^\/api\/snippets\/([\w-]{1,40})$/);
   if (snip && req.method === 'DELETE') { snippets.remove(snip[1]); return send(res, 200, { ok: true }); }
+
+  // Carpetas favoritas del formulario «Nueva sesión».
+  if (p === '/api/favorites' && req.method === 'GET') return send(res, 200, favorites.list());
+  if (p === '/api/favorites' && req.method === 'POST') return send(res, 201, favorites.add((await readJson(req)).dir));
+  if (p === '/api/favorites' && req.method === 'DELETE') return send(res, 200, favorites.remove(url.searchParams.get('dir')));
 
   if (p === '/api/projects') return send(res, 200, listProjects());
   if (p === '/api/dirs' && req.method === 'GET') return send(res, 200, listDirs(url.searchParams.get('path')));
