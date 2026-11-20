@@ -278,11 +278,15 @@ for (const id of ['#btn-resume', '#btn-fresh']) {
 }
 window.addEventListener('popstate', (e) => (e.state?.pane ? openPane(e.state.pane, false) : showList()));
 
+// Al volver a la app con la conexión viva, reclama el tamaño de la ventana (otro dispositivo pudo cambiarlo mientras tanto).
+const claimSize = () => { if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'f' })); };
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
   if (currentPane && (!ws || ws.readyState > 1)) connect();
-  else if (!currentPane) refresh();
+  else if (currentPane) claimSize();
+  else refresh();
 });
+window.addEventListener('focus', claimSize);
 
 // Teclas rápidas. pointerdown + preventDefault evita que se cierre el teclado del celular.
 const KEYS = { 1: '1', 2: '2', 3: '3', esc: '\x1b', tab: '\t', stab: '\x1b[Z', up: '\x1b[A', down: '\x1b[B', left: '\x1b[D', right: '\x1b[C', enter: '\r', ctrlc: '\x03' };

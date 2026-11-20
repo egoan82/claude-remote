@@ -288,7 +288,7 @@ const server = http.createServer((req, res) => {
 });
 
 // ---------- terminal por WebSocket ----------
-// Cliente -> servidor: JSON {t:'i', d:'texto'} | {t:'r', c:cols, r:rows}. Servidor -> cliente: texto crudo.
+// Cliente -> servidor: JSON {t:'i', d:'texto'} | {t:'r', c:cols, r:rows} | {t:'f'} (tomar el tamaño). Servidor -> cliente: texto crudo.
 const wss = new WebSocketServer({ noServer: true, maxPayload: 1024 * 1024 });
 
 server.on('upgrade', (req, socket, head) => {
@@ -314,6 +314,9 @@ function attach(ws, pane, params) {
     let m; try { m = JSON.parse(raw); } catch { return; }
     if (m.t === 'i' && typeof m.d === 'string') term.write(m.d);
     else if (m.t === 'r') term.resize(Math.min(Math.max(m.c | 0, 20), 400), Math.min(Math.max(m.r | 0, 5), 200));
+    // Con window-size latest manda el último cliente que escribió: si fue la laptop, este cliente queda recortado.
+    // switch-client lo vuelve el último y la ventana toma su tamaño sin reconectar.
+    else if (m.t === 'f' && term.ptsName) tmux.tmux(['switch-client', '-c', term.ptsName, '-t', pane]).catch(() => {});
   });
   ws.on('close', () => {
     watching.set(pane, Math.max((watching.get(pane) || 1) - 1, 0));
