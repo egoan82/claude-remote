@@ -12,6 +12,7 @@ const ICON = {
   folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
   term: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>',
   monitor: '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+  detached: '<path d="M17 17H4a2 2 0 0 1-2-2V5c0-1.5 1-2 1-2"/><path d="M22 15V5a2 2 0 0 0-2-2H9"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="m2 2 20 20"/>',
   waiting: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
   working: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
   idle: '<path d="M20 6 9 17l-5-5"/>',
@@ -59,11 +60,11 @@ async function refresh() {
     $('#sessions').innerHTML = list.length ? list.map((s) => `
       <li class="card ${s.state}${s.attached || s.state === 'term' ? '' : ' orphan'}" data-pane="${esc(s.pane)}">
         <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${s.state === 'agents' && s.agents > 1 ? `Esperando ${s.agents} agentes` : STATE[s.state]}</span></div>
-        <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span>${s.account ? `<span class="acct acct-${Number(s.tone) || 0}" title="Cuenta de Claude">${icon('bot')}${esc(s.account)}</span>` : ''}<span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : ''}</div>
+        <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span>${s.account ? `<span class="acct acct-${Number(s.tone) || 0}" title="Cuenta de Claude">${icon('bot')}${esc(s.account)}</span>` : ''}<span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : s.state === 'term' || s.state === 'ended' ? '' : `<span class="att bg" title="Ninguna terminal de la laptop la tiene abierta">${icon('detached')}en segundo plano</span>`}</div>
         <pre>${esc(s.preview.join('\n'))}</pre>
         ${s.state === 'term' ? `<div class="orphan">${icon('term')}<span>Terminal sin Claude${s.attached ? ', abierta también en la laptop' : ''}.</span><div class="acts">${s.attached ? '' : `<button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button>`}<button class="close-pane" type="button">Cerrar</button></div></div>`
           : s.state === 'ended' ? `<div class="orphan">${icon('ended')}<span>${s.attached ? 'Claude ya salió y queda el shell abierto en una terminal de la laptop; al cerrarlo se cierra esa terminal.' : 'Claude ya salió y solo queda el shell, sin terminal abierta.'}</span><div class="acts"><button class="close-pane" type="button">Cerrar</button></div></div>`
-          : s.attached ? '' : `<div class="orphan">${icon('waiting')}<span>Ninguna terminal la tiene abierta; sigue en segundo plano.</span><div class="acts"><button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button><button class="close-pane" type="button">Cerrar</button></div></div>`}
+          : s.attached ? '' : `<div class="orphan"><div class="acts"><button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button><button class="close-pane" type="button">Cerrar</button></div></div>`}
       </li>`).join('') : `
       <li class="empty">${icon('empty', 'i big')}<strong>No hay sesiones de Claude en tmux</strong><span>Crea una con “Nueva” o lanza <code>ct</code> en la laptop.</span></li>`;
     const waiting = list.filter((s) => s.state === 'waiting').length;
