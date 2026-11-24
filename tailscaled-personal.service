@@ -1,0 +1,20 @@
+# Second tailscaled, only for your personal tailnet, in userspace mode: it creates no network
+# interface and touches neither DNS nor routes, so it coexists with the system tailscaled
+# (for example, your work tailnet).
+# Install with: make install-personal-tailnet   (see docs/two-tailnets.md)
+[Unit]
+Description=Tailscale (personal tailnet, userspace) for claude-remote
+Wants=network-pre.target
+After=network-pre.target NetworkManager.service systemd-resolved.service tailscaled.service
+
+[Service]
+ExecStart=/usr/sbin/tailscaled --tun=userspace-networking --statedir=/var/lib/tailscale-personal --socket=/run/tailscale-personal/tailscaled.sock --port=41642
+Type=notify
+Restart=on-failure
+RuntimeDirectory=tailscale-personal
+RuntimeDirectoryMode=0755
+StateDirectory=tailscale-personal
+StateDirectoryMode=0700
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,3 @@
+#!/bin/sh
+# `tailscale` against the personal-tailnet daemon (tailscaled-personal.service).
+exec tailscale --socket=/run/tailscale-personal/tailscaled.sock "$@"

@@ -183,6 +183,10 @@ Your app is now at `https://<computer>.<tailnet>.ts.net` (shown by `tailscale se
 Tailscale policy where only your phone can reach your computer. Replace the example hosts and IPs with your own,
 merge it into *Access controls* in the Tailscale admin console, and use *Preview rules* before saving.
 
+**Is the computer already on another tailnet (for example, your employer's)?** The Tailscale client keeps only one
+account active at a time. [docs/two-tailnets.md](docs/two-tailnets.md) shows how to run a second `tailscaled` in
+userspace mode so the computer stays on both and the app is published only on your personal tailnet.
+
 ### 5. Push notifications (optional)
 
 Register the hooks in every Claude Code config directory you use:
@@ -351,10 +355,12 @@ All settings are environment variables. Put them in the systemd unit, or prefix 
 |---|---|
 | `make install` | `npm ci`: installs dependencies, builds `node-pty`, generates the icons |
 | `make start` | Runs the server in the foreground on `$(PORT)` (default 7681) |
-| `make link-ct` | Symlinks `bin/ct` into `~/.local/bin` |
+| `make link-ct` | Symlinks `bin/ct` and `bin/tsp` into `~/.local/bin` |
 | `make install-service` | Installs and enables the systemd user unit |
 | `make uninstall-service` | Disables and removes it |
-| `make serve` / `make unserve` | Publishes / unpublishes `https://<computer>.<tailnet>.ts.net` with `tailscale serve` |
+| `make install-personal-tailnet` / `make uninstall-personal-tailnet` | Installs / removes a second `tailscaled` for your personal tailnet ([two tailnets](docs/two-tailnets.md)); asks for sudo |
+| `make personal-up` | Logs that second daemon in to your personal tailnet |
+| `make serve` / `make unserve` | Publishes / unpublishes `https://<computer>.<tailnet>.ts.net` with `tailscale serve` (through the personal daemon if it is installed) |
 | `make hooks DIRS="…"` | Registers the push-notification hooks in those Claude config dirs |
 | `make status` | Service status + `tailscale serve status` |
 

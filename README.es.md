@@ -182,6 +182,10 @@ La app queda en `https://<computadora>.<tailnet>.ts.net` (lo muestra `tailscale 
 ejemplo de Tailscale en la que solo tu celular puede llegar a tu computadora. Cambia los hosts e IPs de ejemplo por los tuyos,
 intégrala en *Access controls* de la consola de Tailscale y revísala con *Preview rules* antes de guardar.
 
+**¿La computadora ya está en otra tailnet (por ejemplo, la de tu empresa)?** El cliente de Tailscale solo tiene una
+cuenta activa a la vez. [docs/two-tailnets.es.md](docs/two-tailnets.es.md) explica cómo correr un segundo `tailscaled`
+en modo userspace para que la computadora siga en las dos y la app se publique solo en tu tailnet personal.
+
 ### 5. Avisos push (opcional)
 
 Registra los hooks en cada carpeta de configuración de Claude Code que uses:
@@ -350,10 +354,12 @@ Todo se configura con variables de entorno: en el servicio de systemd, o delante
 |---|---|
 | `make install` | `npm ci`: instala dependencias, compila `node-pty` y genera los íconos |
 | `make start` | Corre el servidor en primer plano en `$(PORT)` (7681 por defecto) |
-| `make link-ct` | Enlaza `bin/ct` en `~/.local/bin` |
+| `make link-ct` | Enlaza `bin/ct` y `bin/tsp` en `~/.local/bin` |
 | `make install-service` | Instala y activa el servicio de usuario de systemd |
 | `make uninstall-service` | Lo desactiva y lo borra |
-| `make serve` / `make unserve` | Publica / quita `https://<computadora>.<tailnet>.ts.net` con `tailscale serve` |
+| `make install-personal-tailnet` / `make uninstall-personal-tailnet` | Instala / quita un segundo `tailscaled` para tu tailnet personal ([dos tailnets](docs/two-tailnets.es.md)); pide sudo |
+| `make personal-up` | Inicia sesión de ese segundo daemon en tu tailnet personal |
+| `make serve` / `make unserve` | Publica / quita `https://<computadora>.<tailnet>.ts.net` con `tailscale serve` (por el daemon personal si está instalado) |
 | `make hooks DIRS="…"` | Registra los hooks de avisos en esas carpetas de configuración de Claude |
 | `make status` | Estado del servicio + `tailscale serve status` |
 
