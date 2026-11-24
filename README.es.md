@@ -58,7 +58,7 @@ El servidor es un solo proceso de Node.js (sin frameworks ni paso de compilació
 | 🗂️ **Lista de sesiones con estado en vivo** | Encuentra cada panel de tmux en cuyo árbol de procesos corre `claude` y lo muestra como tarjeta. El estado es **Espera respuesta** (ámbar y pulsando), **Trabajando** (naranja, girando), **Esperando agente** (Claude terminó su turno pero un agente sigue corriendo en segundo plano, morado) o **Libre** (verde), junto a las últimas líneas de la pantalla. Las que esperan respuesta salen primero y el título de la pestaña dice cuántas hay. Se actualiza cada 3 s; jala hacia abajo para recargar al instante. |
 | 🖥️ **Terminal en vivo** | Abre la sesión real de tmux en [xterm.js](https://xtermjs.org) por WebSocket. Es la misma sesión que ves en la computadora, no una copia. |
 | ⌨️ **Teclas especiales + Detener** | Un teclado de dos filas con etiquetas de texto: `1` `2` `3` para responder menús, `Esc`, `Tab`, `⇧Tab` para cambiar de modo, `←` `↑` `↓` `→`, `Enter`, tamaño de letra `A−`/`A+` y un botón rojo **Detener** que manda **Ctrl+C**. |
-| ✍️ **Caja de prompt** | Para escribir prompts largos con comodidad. El texto de varias líneas se manda como "pegado" (bracketed paste) para que los saltos de línea no lo envíen antes de tiempo. **Ctrl/⌘+Enter** envía. |
+| ✍️ **Caja de prompt** | Para escribir prompts largos con comodidad. El texto de varias líneas se manda como "pegado" (bracketed paste) para que los saltos de línea no lo envíen antes de tiempo. Con teclado físico, **Enter** envía y **Mayús+Enter** hace un salto de línea. |
 | 📎 **Adjuntar imágenes** | Elige una foto o captura. Se achica a 2000 px como máximo en el celular, se sube a tu computadora y su ruta se pega en Claude, que la adjunta como `[Image #N]`. |
 | 💬 **Historial tipo chat** | Lee la transcripción de Claude Code (`.jsonl`) y la muestra como chat: tus mensajes, las respuestas de Claude con Markdown y bloques de código, y las herramientas agrupadas en filas plegables. Los comandos largos se parten en `&&`, `||` y `|` para leerlos fácil, y cada comando o bloque de código tiene un botón para copiarlo. Si no encuentra la transcripción, muestra el scrollback de tmux. |
 | 🖼️ **Visor de imágenes** | Las rutas de imágenes (png, jpg, gif, webp) que aparecen en la terminal o el historial se pueden tocar y se abren a pantalla completa; un toque alterna entre ajustada y tamaño real, y hay botón para descargar. Los archivos que Claude manda con `SendUserFile` salen en el historial como miniaturas. El servidor solo entrega imágenes y resuelve los enlaces simbólicos antes de mirar la extensión. |
@@ -66,6 +66,7 @@ El servidor es un solo proceso de Node.js (sin frameworks ni paso de compilació
 | ➕ **Sesión nueva con buscador de proyectos** | Arranca Claude en cualquiera de tus repos: busca por nombre o carpeta (sin importar tildes ni mayúsculas, los recientes primero) o escribe una ruta, y marca como favoritas las carpetas que usas a diario. Elige el comando o alias (o una terminal sola, sin Claude) y, si quieres, un nombre para la sesión. |
 | 🔖 **Comandos guardados** | Guarda comandos o prompts frecuentes en tu computadora e insértalos en la caja de texto, o envíalos con un toque, desde cualquier dispositivo. |
 | 🏷️ **Títulos de `/rename`** | Si le pusiste nombre a la conversación con `/rename` de Claude Code, se muestra ese nombre en vez del de la carpeta. |
+| 🪟 **Barra lateral y vista dividida en escritorio** | En la computadora la lista de sesiones queda en una barra lateral junto a la terminal, y puedes ver hasta 4 sesiones lado a lado. En el celular, toca el título de la terminal para saltar a otra sesión. |
 | 📱 **PWA instalable** | Agrégala a la pantalla de inicio y se abre a pantalla completa como una app nativa. Pensada primero para el celular, con soporte de safe areas, botones grandes y un tema grafito oscuro con acentos naranjas. También funciona bien en escritorio. |
 
 <table>
@@ -245,7 +246,7 @@ Toca **Nueva** en la barra superior:
 
 <p align="center"><img src="docs/screenshots/phone-terminal.png" width="260" alt="Vista de terminal"></p>
 
-La sesión real de tmux, en vivo. La barra muestra el nombre, un indicador de **conexión** (Wi-Fi verde si está conectada; Wi-Fi tachado en rojo si no, y se reconecta sola) un botón **?** que explica cada tecla y botón (con sus mismos iconos), un botón rojo de **terminar sesión** (icono de encendido) que, tras confirmar, escribe `/exit` en Claude para que muestre su resumen de salida habitual y quede el shell (solo aparece mientras Claude está abierto). Cuando Claude ya salió, una franja sobre las teclas ofrece **Retomar** (vuelve a la misma conversación con `--resume <id>`, leído del mensaje de salida de Claude, o `--continue`) y **Nueva** (una conversación nueva), ambas con el comando con que se lanzó la sesión, y el botón de **historial**.
+La sesión real de tmux, en vivo. La barra muestra el nombre (tócalo para abrir la **hoja de sesiones** y saltar a otra; un contador indica cuántas otras esperan respuesta), un indicador de **conexión** (Wi-Fi verde si está conectada; Wi-Fi tachado en rojo si no, y se reconecta sola) un botón **?** que explica cada tecla y botón (con sus mismos iconos), un botón rojo de **terminar sesión** (icono de encendido) que, tras confirmar, escribe `/exit` en Claude para que muestre su resumen de salida habitual y quede el shell (solo aparece mientras Claude está abierto). Cuando Claude ya salió, una franja sobre las teclas ofrece **Retomar** (vuelve a la misma conversación con `--resume <id>`, leído del mensaje de salida de Claude, o `--continue`) y **Nueva** (una conversación nueva), ambas con el comando con que se lanzó la sesión, y el botón de **historial**.
 
 | Tecla | Manda | Para qué |
 |---|---|---|
@@ -264,14 +265,14 @@ El botón **?** de la barra superior lista cada tecla y botón con su icono y lo
 Las teclas no le quitan el foco a la caja de texto, así que el teclado del celular no se cierra.
 
 **Caja de prompt**: escribe y toca el botón de enviar (**Enviar**). Si está vacía, solo manda Enter.
-Los prompts de varias líneas se mandan como pegado. **Ctrl/⌘+Enter** envía desde un teclado físico.
+Los prompts de varias líneas se mandan como pegado. Con teclado físico, **Enter** envía y **Mayús+Enter** hace un salto de línea (Ctrl/⌘+Enter también envía).
 
 **📎 Adjuntar imagen**: elige una imagen (png, jpg, gif o webp, hasta 20 MB). Las fotos grandes se achican a 2000 px y se recodifican como JPEG en el celular.
 Se guardan en la computadora en `$TMPDIR/claude-remote-uploads/` (permisos 0700; se borran al día) y su ruta se pega en el prompt.
 
 **🔖 Comandos guardados**: el botón del marcador junto a la caja de texto abre tus comandos. Toca uno para insertarlo en la caja (y revisarlo antes) o ▶ para enviarlo directo; ahí mismo se editan o borran. Arriba hay un buscador que filtra por nombre o texto (sin importar tildes ni mayúsculas). Lo que ya tengas escrito en la caja aparece listo para guardarlo. Se guardan en la computadora en `data/snippets.json`, así todos los dispositivos ven la misma lista.
 
-<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Ayuda de teclas">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Comandos guardados">&nbsp;&nbsp;<img src="docs/screenshots/phone-ended.png" width="240" alt="Tras terminar Claude: Retomar o Nueva"><br><sub>Ayuda de teclas (?) · Comandos guardados · Tras /exit: Retomar o Nueva</sub></p>
+<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Ayuda de teclas">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Comandos guardados">&nbsp;&nbsp;<img src="docs/screenshots/phone-ended.png" width="240" alt="Tras terminar Claude: Retomar o Nueva">&nbsp;&nbsp;<img src="docs/screenshots/phone-switcher.png" width="240" alt="Hoja de sesiones"><br><sub>Ayuda de teclas (?) · Comandos guardados · Tras /exit: Retomar o Nueva · Hoja de sesiones</sub></p>
 
 ### Historial
 
@@ -294,9 +295,13 @@ El contenido de la transcripción siempre se escapa antes de darle formato.
 
 ### Escritorio
 
-También funciona en el navegador de la computadora: la lista se vuelve una cuadrícula y el historial se abre como un panel centrado.
+En pantallas de 1024 px o más, la lista de sesiones se vuelve una **barra lateral** junto a la terminal, así cambiar de sesión es un clic. La barra mantiene un orden fijo (por creación) para que las tarjetas no salten; las que esperan respuesta siguen resaltadas. Abajo se ven la versión y el commit de la app.
 
-<img src="docs/screenshots/desktop-list.png" alt="Lista en escritorio" width="100%">
+- **Vista dividida**: el botón de dividir de cada tarjeta agrega esa sesión a una cuadrícula de hasta **4 terminales**. Haz clic en una terminal para darle el foco (borde naranja): las teclas, la caja de texto, el historial y *terminar sesión* actúan sobre esa. La ✕ de una terminal la quita de la vista dividida; un clic en una tarjeta que no está en ella la abre sola.
+- **Atajos**: **Alt+1…9** abre la sesión N de la barra; **Alt+↑ / Alt+↓** va a la anterior o la siguiente, o pasa el foco entre terminales en la vista dividida.
+- El historial se abre como un panel centrado.
+
+<img src="docs/screenshots/desktop-split.png" alt="Escritorio: barra lateral y vista dividida" width="100%">
 <img src="docs/screenshots/desktop-history.png" alt="Historial en escritorio" width="100%">
 
 ## El comando `ct`

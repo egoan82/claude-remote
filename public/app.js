@@ -33,6 +33,7 @@ const ICON = {
   pencil: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
   trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+  split: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>',
   empty: '<path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
 };
 const icon = (n, c = 'i') => `<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
@@ -48,20 +49,24 @@ function connError(err) {
 }
 
 // ---------------- lista ----------------
-let pollTimer = null;
 let lastSessions = [];
+
+// Orden fijo (por creación del panel) para la barra lateral, la hoja de sesiones y los atajos: así no saltan.
+const stableOrder = (list) => [...list].sort((a, b) => Number(a.pane.slice(1)) - Number(b.pane.slice(1)));
+// Celular: primero las que esperan respuesta y luego por actividad.
+const urgentOrder = (list) => [...list].sort((a, b) => (a.state === 'waiting' ? -1 : 0) - (b.state === 'waiting' ? -1 : 0) || b.activity - a.activity);
 
 async function refresh() {
   try {
     const list = await api('/api/sessions');
     lastSessions = list;
     $('#status').textContent = '';
-    list.sort((a, b) => (a.state === 'waiting' ? -1 : 0) - (b.state === 'waiting' ? -1 : 0) || b.activity - a.activity);
-    $('#sessions').innerHTML = list.length ? list.map((s) => `
+    const shown = DESK.matches ? stableOrder(list) : urgentOrder(list);
+    $('#sessions').innerHTML = shown.length ? shown.map((s, i) => `
       <li class="card ${s.state}${s.attached || s.state === 'term' ? '' : ' orphan'}" data-pane="${esc(s.pane)}">
-        <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${s.state === 'agents' && s.agents > 1 ? `Esperando ${s.agents} agentes` : STATE[s.state]}</span></div>
+        <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${s.state === 'agents' && s.agents > 1 ? `Esperando ${s.agents} agentes` : STATE[s.state]}</span><button type="button" class="split-btn" aria-pressed="false" title="Ver junto a las otras (split)${i < 9 ? ` · Alt+${i + 1} para abrirla` : ''}" aria-label="Agregar al split">${icon('split')}</button></div>
         <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span>${s.account ? `<span class="acct acct-${Number(s.tone) || 0}" title="Cuenta de Claude">${icon('bot')}${esc(s.account)}</span>` : ''}<span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : s.state === 'term' || s.state === 'ended' ? '' : `<span class="att bg" title="Ninguna terminal de la laptop la tiene abierta">${icon('detached')}en segundo plano</span>`}</div>
-        <pre>${esc(s.preview.join('\n'))}</pre>
+        <pre>${esc((DESK.matches ? s.preview.filter((l) => l.trim()).slice(-1) : s.preview).join('\n'))}</pre>
         ${s.state === 'term' ? `<div class="orphan">${icon('term')}<span>Terminal sin Claude${s.attached ? ', abierta también en la laptop' : ''}.</span><div class="acts">${s.attached ? '' : `<button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button>`}<button class="close-pane" type="button">Cerrar</button></div></div>`
           : s.state === 'ended' ? `<div class="orphan">${icon('ended')}<span>${s.attached ? 'Claude ya salió y queda el shell abierto en una terminal de la laptop; al cerrarlo se cierra esa terminal.' : 'Claude ya salió y solo queda el shell, sin terminal abierta.'}</span><div class="acts"><button class="close-pane" type="button">Cerrar</button></div></div>`
           : s.attached ? '' : `<div class="orphan"><div class="acts"><button class="open-laptop" type="button">${icon('monitor')}Abrir en la laptop</button><button class="close-pane" type="button">Cerrar</button></div></div>`}
@@ -69,23 +74,25 @@ async function refresh() {
       <li class="empty">${icon('empty', 'i big')}<strong>No hay sesiones de Claude en tmux</strong><span>Crea una con “Nueva” o lanza <code>ct</code> en la laptop.</span></li>`;
     const waiting = list.filter((s) => s.state === 'waiting').length;
     document.title = waiting ? `(${waiting}) Claude Remote` : 'Claude Remote';
+    // Un panel del split que ya no existe (se cerró) sale de la vista.
+    const gone = split.filter((p) => !list.some((s) => s.pane === p));
+    if (gone.length) gone.forEach(toggleSplit);
+    if ($('#switcher').open) renderSwitcher();
+    updateTermInfo();
   } catch (err) {
     $('#status').textContent = connError(err);
   }
 }
 
 function showList() {
-  closeTerm();
-  $('#term-view').classList.add('hidden');
-  $('#list-view').classList.remove('hidden');
+  closeTerms();
   refresh();
-  clearInterval(pollTimer);
-  pollTimer = setInterval(() => { if (!document.hidden) refresh(); }, 3000);
 }
 
 $('#sessions').addEventListener('click', async (e) => {
   const card = e.target.closest('.card');
   if (!card) return;
+  if (e.target.closest('.split-btn')) return toggleSplit(card.dataset.pane);
   const pane = encodeURIComponent(card.dataset.pane);
   if (e.target.closest('.open-laptop')) {
     try { await api(`/api/panes/${pane}/open`, { method: 'POST' }); } catch (err) { $('#status').textContent = `No se pudo abrir en la laptop: ${err.message}`; }
@@ -101,21 +108,71 @@ $('#sessions').addEventListener('click', async (e) => {
 });
 
 // ---------------- terminal ----------------
-let term, fit, ws, currentPane = null, retry = null;
+// Cada Tile es una terminal xterm conectada a un panel de tmux. En el celular hay una; en escritorio,
+// hasta MAX_TILES lado a lado (split). La que tiene el foco recibe las teclas, el prompt y las acciones del encabezado.
+const DESK = matchMedia('(min-width: 1024px)');
+const MAX_TILES = 4;
+let tiles = [], focused = null, currentPane = null;
+let split = []; // paneles elegidos para verse juntos (solo escritorio)
 
-function ensureTerm() {
-  if (term) return;
-  term = new Terminal({
-    fontSize: Number(store.get('fontSize', 12)), fontFamily: 'ui-monospace, "JetBrains Mono", Menlo, monospace',
-    cursorBlink: true, scrollback: 2000, allowProposedApi: true,
-    theme: { background: '#0a0a0a', foreground: '#f2efe9', cursor: '#ff7a45', cursorAccent: '#0a0a0a', selectionBackground: '#5a3322' },
-  });
-  fit = new FitAddon.FitAddon();
-  term.loadAddon(fit);
-  term.open($('#term'));
-  term.onData((d) => sendInput(d));
-  term.registerLinkProvider({ provideLinks: imageLinks });
-  new ResizeObserver(() => fitAndResize()).observe($('#term'));
+class Tile {
+  constructor(pane) {
+    this.pane = pane;
+    this.el = document.createElement('div');
+    this.el.className = 'tile';
+    this.el.dataset.pane = pane;
+    this.el.innerHTML = `<div class="tile-bar"><span class="tile-name"></span><span class="tile-badge"></span><button type="button" class="ghost icon tile-close" title="Quitar del split" aria-label="Quitar del split">${icon('x')}</button></div><div class="tile-term"></div>`;
+    $('#tiles').append(this.el);
+    this.term = new Terminal({
+      fontSize: Number(store.get('fontSize', 12)), fontFamily: 'ui-monospace, "JetBrains Mono", Menlo, monospace',
+      cursorBlink: true, scrollback: 2000, allowProposedApi: true,
+      theme: { background: '#0a0a0a', foreground: '#f2efe9', cursor: '#ff7a45', cursorAccent: '#0a0a0a', selectionBackground: '#5a3322' },
+    });
+    this.fit = new FitAddon.FitAddon();
+    this.term.loadAddon(this.fit);
+    this.term.open(this.el.querySelector('.tile-term'));
+    this.term.onData((d) => this.send(d));
+    this.term.registerLinkProvider({ provideLinks: (y, cb) => imageLinks(this.term, y, cb) });
+    this.term.textarea?.addEventListener('focus', () => focusTile(this));
+    this.el.addEventListener('pointerdown', (e) => { if (!e.target.closest('.tile-close')) focusTile(this); });
+    this.el.querySelector('.tile-close').addEventListener('click', () => toggleSplit(this.pane));
+    this.ro = new ResizeObserver(() => this.resize());
+    this.ro.observe(this.el.querySelector('.tile-term'));
+    requestAnimationFrame(() => { if (!this.closed) { this.resize(); this.connect(); } });
+  }
+
+  resize() {
+    if (this.closed || $('#term-view').classList.contains('hidden')) return;
+    try { this.fit.fit(); } catch { return; }
+    if (this.ws?.readyState === 1) this.ws.send(JSON.stringify({ t: 'r', c: this.term.cols, r: this.term.rows }));
+  }
+
+  send(d) { if (this.ws?.readyState === 1) this.ws.send(JSON.stringify({ t: 'i', d })); }
+
+  // Con window-size latest manda el último cliente que escribió: esto recupera el tamaño de esta terminal.
+  claim() { if (this.ws?.readyState === 1) this.ws.send(JSON.stringify({ t: 'f' })); }
+
+  connect() {
+    clearTimeout(this.retry);
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const sock = this.ws = new WebSocket(`${proto}://${location.host}/ws?pane=${encodeURIComponent(this.pane)}&cols=${this.term.cols}&rows=${this.term.rows}`);
+    sock.onopen = () => { this.el.classList.remove('off'); updateConn(); this.term.reset(); this.resize(); };
+    sock.onmessage = (e) => this.term.write(e.data);
+    sock.onclose = () => {
+      this.el.classList.add('off'); updateConn();
+      // Reintenta mientras la terminal siga a la vista.
+      if (sock === this.ws && !this.closed && !document.hidden) this.retry = setTimeout(() => this.connect(), 1500);
+    };
+  }
+
+  destroy() {
+    this.closed = true;
+    clearTimeout(this.retry);
+    this.ro.disconnect();
+    if (this.ws) { const s = this.ws; this.ws = null; s.close(); }
+    this.term.dispose();
+    this.el.remove();
+  }
 }
 
 // ---------------- imágenes ----------------
@@ -124,7 +181,7 @@ const IMG_RE = /(?<![\w./~-])(?:~\/|\/)[^\s'"`<>()[\]{}|*?,;]*?\.(?:png|jpe?g|gi
 
 // Enlaces de la terminal: une las filas que xterm partió (isWrapped) y mapea cada carácter a su celda,
 // así una ruta larga partida en dos filas sigue siendo un solo enlace.
-function imageLinks(y, cb) {
+function imageLinks(term, y, cb) {
   const buf = term.buffer.active;
   let first = y - 1, last = y - 1;
   while (first > 0 && buf.getLine(first)?.isWrapped) first--;
@@ -195,52 +252,129 @@ function linkImages(root) {
   }
 }
 
-function fitAndResize() {
-  if (!term || $('#term-view').classList.contains('hidden')) return;
-  try { fit.fit(); } catch { return; }
-  if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'r', c: term.cols, r: term.rows }));
+const sendInput = (d) => focused?.send(d);
+const updateConn = () => { $('#conn').className = `dot ${focused?.ws?.readyState === 1 ? 'on' : 'off'}`; };
+const sessionOf = (pane) => lastSessions.find((x) => x.pane === pane);
+// «blog-engine · blog-engine» se acorta a «blog-engine»: en el celular el título tiene poco espacio.
+const sessionName = (s) => { if (!s) return ''; const n = s.title || s.project; return n === s.session ? n : `${n} · ${s.session}`; };
+
+// Celular: o la lista o la terminal. Escritorio: la lista como barra lateral y la terminal (o un aviso) al lado.
+function layout() {
+  const open = tiles.length > 0;
+  $('#list-view').classList.toggle('hidden', !DESK.matches && open);
+  $('#term-view').classList.toggle('hidden', !DESK.matches && !open);
+  $('#term-view').classList.toggle('no-term', !open);
+  $('#tiles').dataset.n = tiles.length;
 }
 
-function sendInput(d) { if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'i', d })); }
-
-function connect() {
-  clearTimeout(retry);
-  const pane = currentPane;
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}/ws?pane=${encodeURIComponent(pane)}&cols=${term.cols}&rows=${term.rows}`);
-  const sock = ws;
-  sock.onopen = () => { $('#conn').className = 'dot on'; term.reset(); fitAndResize(); };
-  sock.onmessage = (e) => term.write(e.data);
-  sock.onclose = () => {
-    $('#conn').className = 'dot off';
-    // Reintenta mientras sigamos viendo este panel.
-    if (sock === ws && currentPane === pane && !document.hidden) retry = setTimeout(connect, 1500);
-  };
+// Muestra exactamente estos paneles (reusa las terminales que ya estaban abiertas) y enfoca uno.
+function showPanes(panes, focusPane) {
+  const old = new Map(tiles.map((t) => [t.pane, t]));
+  tiles = panes.map((p) => old.get(p) || new Tile(p));
+  for (const [p, t] of old) if (!panes.includes(p)) t.destroy();
+  for (const t of tiles) $('#tiles').append(t.el);
+  layout();
+  focused = null;
+  focusTile(tiles.find((t) => t.pane === focusPane) || tiles[0]);
 }
 
-function openPane(pane, push) {
-  currentPane = pane;
-  clearInterval(pollTimer);
-  const s = lastSessions.find((x) => x.pane === pane);
-  $('#term-title').textContent = s ? `${s.title || s.project} · ${s.session}` : pane;
+function focusTile(t) {
+  if (!t || focused === t) return;
+  focused = t;
+  currentPane = t.pane;
+  for (const x of tiles) x.el.classList.toggle('focus', x === t);
+  const s = sessionOf(t.pane);
   $('#prompt-text').placeholder = s?.state === 'term' || s?.state === 'ended' ? 'Escribe un comando…' : 'Escribe a Claude…';
   $('#btn-end').classList.toggle('hidden', s?.state === 'term' || s?.state === 'ended');
   $('#relaunch').classList.add('hidden');
-  if (s?.state === 'ended') loadRelaunch(pane);
-  $('#list-view').classList.add('hidden');
-  $('#term-view').classList.remove('hidden');
-  if (push) history.pushState({ pane }, '', `?pane=${encodeURIComponent(pane)}`);
-  ensureTerm();
-  requestAnimationFrame(() => { fitAndResize(); connect(); });
+  if (s?.state === 'ended') loadRelaunch(t.pane);
+  updateConn();
+  updateTermInfo();
+  if (DESK.matches) {
+    history.replaceState({ pane: t.pane }, '', `?pane=${encodeURIComponent(t.pane)}`);
+    if (document.activeElement !== t.term.textarea && !document.activeElement?.closest('#prompt')) t.term.focus();
+  }
 }
 
-function closeTerm() {
-  currentPane = null;
-  clearTimeout(retry);
-  if (ws) { const s = ws; ws = null; s.close(); }
+// Título, nombres y estados de las terminales abiertas, y marcas en la lista. Se llama en cada refresco.
+function updateTermInfo() {
+  const cur = sessionOf(currentPane);
+  // En el celular el encabezado es angosto: solo el nombre (la sesión de tmux se ve en la hoja de sesiones).
+  $('#term-title').textContent = (DESK.matches ? sessionName(cur) : cur && (cur.title || cur.project)) || currentPane || '';
+  for (const t of tiles) {
+    const s = sessionOf(t.pane);
+    t.el.querySelector('.tile-name').textContent = sessionName(s) || t.pane;
+    t.el.querySelector('.tile-badge').innerHTML = s ? `<span class="badge ${s.state}">${icon(s.state)}${STATE[s.state]}</span>` : '';
+  }
+  for (const c of document.querySelectorAll('#sessions .card, #switch-list .card')) {
+    c.classList.toggle('viewing', tiles.some((t) => t.pane === c.dataset.pane));
+    c.classList.toggle('current', c.dataset.pane === currentPane);
+    c.classList.toggle('in-split', split.includes(c.dataset.pane));
+    const b = c.querySelector('.split-btn');
+    if (b) b.setAttribute('aria-pressed', String(split.includes(c.dataset.pane)));
+  }
+  // Celular: cuántas otras sesiones esperan respuesta, junto al título.
+  const others = lastSessions.filter((s) => s.state === 'waiting' && s.pane !== currentPane).length;
+  $('#switch-count').textContent = others || '';
+  $('#switch-count').classList.toggle('hidden', !others);
+}
+
+// Abre un panel. Si ya está en el split, solo le pasa el foco; si no, se ve solo (y el split se deshace).
+function openPane(pane, push) {
+  if (DESK.matches && split.length > 1 && split.includes(pane)) showPanes(split, pane);
+  else { split = []; showPanes([pane], pane); }
+  if (push && !DESK.matches) history.pushState({ pane }, '', `?pane=${encodeURIComponent(pane)}`);
+  updateTermInfo();
+}
+
+// Agrega o quita un panel del split. El primero que se agrega se suma a la terminal que ya se estaba viendo.
+function toggleSplit(pane) {
+  if (split.includes(pane)) split = split.filter((p) => p !== pane);
+  else {
+    if (!split.length && currentPane && currentPane !== pane) split = [currentPane];
+    if (split.length >= MAX_TILES) { flash(`Máximo ${MAX_TILES} terminales a la vez`); return; }
+    split.push(pane);
+  }
+  const panes = split.length ? [...split] : tiles.filter((t) => t.pane !== pane).map((t) => t.pane).slice(0, 1);
+  const keep = panes.includes(currentPane) ? currentPane : split.includes(pane) ? pane : panes[0];
+  if (split.length < 2) split = [];
+  if (panes.length) showPanes(panes, keep); else closeTerms();
+  updateTermInfo();
+}
+
+function closeTerms() {
+  for (const t of tiles) t.destroy();
+  tiles = []; focused = null; currentPane = null; split = [];
+  layout();
+}
+
+let flashTimer;
+function flash(msg) {
+  $('#status').textContent = msg;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { if ($('#status').textContent === msg) $('#status').textContent = ''; }, 2500);
 }
 
 $('#btn-back').addEventListener('click', () => (history.state?.pane ? history.back() : (history.replaceState(null, '', '/'), showList())));
+
+// Hoja de sesiones (celular): tocar el título de la terminal muestra las demás para saltar sin volver a la lista.
+function renderSwitcher() {
+  $('#switch-list').innerHTML = stableOrder(lastSessions).map((s) => `
+    <li class="card compact ${s.state}" data-pane="${esc(s.pane)}">
+      <div class="top"><span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${STATE[s.state]}</span></div>
+      <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span></div>
+    </li>`).join('') || '<li class="empty">No hay otras sesiones</li>';
+  updateTermInfo();
+}
+$('#btn-switch').addEventListener('click', () => { if (DESK.matches) return; renderSwitcher(); $('#switcher').showModal(); });
+$('#btn-close-switcher').addEventListener('click', () => $('#switcher').close());
+$('#switcher').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) { $('#switcher').close(); return; } // toque fuera de la hoja
+  const card = e.target.closest('.card');
+  if (!card) return;
+  $('#switcher').close();
+  if (card.dataset.pane !== currentPane) switchTo(card.dataset.pane);
+});
 
 // Terminar: escribe /exit en Claude, como hacerlo a mano. Claude muestra cómo retomar la conversación y queda la terminal.
 $('#btn-end').addEventListener('click', () => {
@@ -280,14 +414,45 @@ for (const id of ['#btn-resume', '#btn-fresh']) {
 window.addEventListener('popstate', (e) => (e.state?.pane ? openPane(e.state.pane, false) : showList()));
 
 // Al volver a la app con la conexión viva, reclama el tamaño de la ventana (otro dispositivo pudo cambiarlo mientras tanto).
-const claimSize = () => { if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'f' })); };
+const claimSize = () => tiles.forEach((t) => t.claim());
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
-  if (currentPane && (!ws || ws.readyState > 1)) connect();
-  else if (currentPane) claimSize();
-  else refresh();
+  for (const t of tiles) if (!t.ws || t.ws.readyState > 1) t.connect(); else t.claim();
+  refresh();
 });
 window.addEventListener('focus', claimSize);
+
+// Al cruzar el ancho de escritorio: el split solo existe en escritorio, así que en el celular queda la terminal con foco.
+DESK.addEventListener('change', () => {
+  if (!DESK.matches && tiles.length > 1) { const p = currentPane; split = []; showPanes([p], p); }
+  layout();
+  refresh();
+});
+
+// Atajos (capturados antes que xterm): Alt+1..9 abre la sesión N de la lista; Alt+↑/↓ la anterior/siguiente,
+// o en el split pasa el foco entre terminales. Se usa e.code para que funcione con cualquier distribución de teclado.
+window.addEventListener('keydown', (e) => {
+  if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || document.querySelector('dialog[open]')) return;
+  const order = stableOrder(lastSessions);
+  let target = null;
+  if (/^Digit[1-9]$/.test(e.code)) target = order[Number(e.code.slice(5)) - 1]?.pane;
+  else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
+    const step = e.code === 'ArrowDown' ? 1 : -1;
+    if (tiles.length > 1) { const i = tiles.indexOf(focused); focusTile(tiles[(i + step + tiles.length) % tiles.length]); e.preventDefault(); e.stopPropagation(); return; }
+    const i = order.findIndex((s) => s.pane === currentPane);
+    target = order[i < 0 ? 0 : (i + step + order.length) % order.length]?.pane;
+  } else return;
+  e.preventDefault(); e.stopPropagation();
+  if (target && target !== currentPane) switchTo(target);
+}, true);
+
+// Cambia de sesión desde la terminal (atajos y hoja de sesiones). En el celular reemplaza la entrada del historial
+// para que Atrás siga volviendo a la lista; desde la lista, la agrega como un toque normal.
+function switchTo(pane) {
+  const fromList = !tiles.length;
+  openPane(pane, !DESK.matches && fromList);
+  if (!DESK.matches && !fromList) history.replaceState({ pane }, '', `?pane=${encodeURIComponent(pane)}`);
+}
 
 // Teclas rápidas. pointerdown + preventDefault evita que se cierre el teclado del celular.
 const KEYS = { 1: '1', 2: '2', 3: '3', esc: '\x1b', tab: '\t', stab: '\x1b[Z', up: '\x1b[A', down: '\x1b[B', left: '\x1b[D', right: '\x1b[C', enter: '\r', ctrlc: '\x03' };
@@ -297,8 +462,9 @@ $('#keys').addEventListener('pointerdown', (e) => {
   e.preventDefault();
   if (b.dataset.k in KEYS) sendInput(KEYS[b.dataset.k]);
   if (b.dataset.k === 'font+' || b.dataset.k === 'font-') {
-    const size = Math.min(Math.max(term.options.fontSize + (b.dataset.k === 'font+' ? 1 : -1), 8), 20);
-    term.options.fontSize = size; store.set('fontSize', size); fitAndResize();
+    const size = Math.min(Math.max(Number(store.get('fontSize', 12)) + (b.dataset.k === 'font+' ? 1 : -1), 8), 20);
+    store.set('fontSize', size);
+    for (const t of tiles) { t.term.options.fontSize = size; t.resize(); }
   }
 });
 $('#keys').insertAdjacentHTML('beforeend', '<button data-k="font-" aria-label="Letra más pequeña" title="Letra más pequeña">A−</button><button data-k="font+" aria-label="Letra más grande" title="Letra más grande">A+</button>');
@@ -313,8 +479,11 @@ $('#prompt').addEventListener('submit', (e) => {
   ta.value = ''; ta.style.height = '';
 });
 $('#prompt-text').addEventListener('input', (e) => { const t = e.target; t.style.height = ''; t.style.height = `${t.scrollHeight}px`; });
+const PHYSICAL_KB = matchMedia('(hover: hover) and (pointer: fine)');
 $('#prompt-text').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('#prompt').requestSubmit(); }
+  if (e.key !== 'Enter' || e.isComposing) return;
+  // Con teclado físico (PC): Enter envía y Mayús+Enter hace salto de línea. En el celular Enter es salto de línea.
+  if (e.ctrlKey || e.metaKey || (PHYSICAL_KB.matches && !e.shiftKey && !e.altKey)) { e.preventDefault(); $('#prompt').requestSubmit(); }
 });
 
 // ---------------- ayuda de las teclas ----------------
@@ -338,7 +507,7 @@ const HELP_KEYS = [
 const HELP_BUTTONS = [
   ['#btn-image', 'Adjuntar imagen', 'Sube una foto a la laptop y pega su ruta para que Claude la vea.'],
   ['#btn-snippets', 'Comandos guardados', 'Guarda comandos frecuentes; tocarlo lo inserta y ▶ lo envía directo.'],
-  ['#prompt .send', 'Enviar', 'Manda lo escrito y pulsa Enter. Con el cuadro vacío envía solo Enter. En computadora: Ctrl+Enter.'],
+  ['#prompt .send', 'Enviar', 'Manda lo escrito y pulsa Enter. Con el cuadro vacío envía solo Enter. En computadora: Enter envía y Mayús+Enter hace un salto de línea.'],
   ['#btn-end', 'Terminar sesión', 'Sale de Claude con /exit. Queda la terminal con el comando para retomar la conversación (--resume). Solo aparece mientras Claude está abierto.'],
   ['#btn-resume', 'Retomar', 'Aparece cuando Claude ya salió: lo vuelve a abrir en la misma conversación (--resume con el ID que mostró al salir).'],
   ['#btn-fresh', 'Nueva', 'Aparece cuando Claude ya salió: lo abre de nuevo con una conversación nueva, con el mismo comando.'],
@@ -982,6 +1151,14 @@ $('#btn-push').addEventListener('click', async () => {
 
 // ---------------- arranque ----------------
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+api('/api/version').then(({ version, commit }) => {
+  $('#app-version').textContent = `Claude Remote v${version}${commit ? ` · ${commit}` : ''}`;
+}).catch(() => {});
+
+// La lista se refresca siempre: en escritorio es la barra lateral y en el celular alimenta la hoja de sesiones.
+setInterval(() => { if (!document.hidden) refresh(); }, 3000);
+layout();
 
 const initial = new URLSearchParams(location.search).get('pane');
 if (initial && /^%\d+$/.test(initial)) {

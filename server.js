@@ -7,6 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { WebSocketServer } from 'ws';
 import pty from 'node-pty';
+import { execFileSync } from 'node:child_process';
 import * as tmux from './lib/tmux.js';
 import * as push from './lib/push.js';
 import * as transcript from './lib/transcript.js';
@@ -14,6 +15,13 @@ import * as snippets from './lib/snippets.js';
 import * as favorites from './lib/favorites.js';
 
 const ROOT = path.dirname(new URL(import.meta.url).pathname);
+// Versión que muestra la app: la de package.json y, si es un clon de git, el commit corriendo.
+const VERSION = (() => {
+  const v = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
+  let commit = '';
+  try { commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { /* sin git */ }
+  return { version: v, commit };
+})();
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 7681);
 const list = (v) => (v || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -267,6 +275,7 @@ async function route(req, res) {
   if (p === '/api/projects') return send(res, 200, listProjects());
   if (p === '/api/dirs' && req.method === 'GET') return send(res, 200, listDirs(url.searchParams.get('path')));
   if (p === '/api/commands') return send(res, 200, CLAUDE_CMDS);
+  if (p === '/api/version') return send(res, 200, VERSION);
   if (p === '/api/push/key') return send(res, 200, { key: push.publicKey });
   if (p === '/api/push/subscribe' && req.method === 'POST') { push.subscribe(await readJson(req)); return send(res, 201, { ok: true }); }
   if (p === '/api/push/test' && req.method === 'POST') {

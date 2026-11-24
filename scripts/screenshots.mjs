@@ -124,6 +124,8 @@ async function setup(page, { sessions = SESSIONS, term = TERM } = {}) {
       const d = (u.searchParams.get('path') || '~').replace(/^~/, '/home/dev');
       return json({ path: d, parent: d === '/' ? null : path.dirname(d), dirs: DIRS[d] || [] });
     }
+    if (p === '/api/favorites') return json([]);
+    if (p === '/api/version') return json({ version: '0.1.0', commit: 'a1b2c3d' });
     if (p === '/api/commands') return json(['claude', 'claude --continue']);
     if (p === '/api/snippets') return json(SNIPPETS);
     if (p === '/api/image') { const img = IMAGES[u.searchParams.get('path')]; return img ? route.fulfill({ status: 200, contentType: 'image/png', body: img }) : json({ error: 'no encontrado' }, 404); }
@@ -179,6 +181,8 @@ await shot('phone-viewer', { act: async (p) => { await openHistory(p); await p.w
 await shot('phone-ended', { sessions: ENDED, term: TERM_ENDED, act: async (p) => { await p.click('.card[data-pane="%3"]'); await p.waitForSelector('#relaunch:not(.hidden)'); await p.waitForTimeout(600); } });
 await shot('desktop-list', { phone: false });
 await shot('desktop-terminal', { phone: false, act: openTerm });
+await shot('desktop-split', { phone: false, act: async (p) => { await openTerm(p); for (const pane of ['%2', '%5', '%3']) await p.click(`#sessions .card[data-pane="${pane}"] .split-btn`); await p.waitForTimeout(900); } });
+await shot('phone-switcher', { act: async (p) => { await p.click('.card[data-pane="%2"]'); await p.waitForTimeout(600); await p.click('#btn-switch'); } });
 await shot('desktop-history', { phone: false, act: (p) => openHistory(p, { expand: true }) });
 
 // Hero: three phone shots on a graphite background.

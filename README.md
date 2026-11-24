@@ -59,7 +59,7 @@ The server is a single Node.js process (no framework, no build step) bound to `1
 | 🗂️ **Session list with live status** | Finds every tmux pane whose process tree runs `claude` and shows it as a card. The status is **Espera respuesta** (waiting for you, amber and pulsing), **Trabajando** (working, orange spinner), **Esperando agente** (Claude finished its turn but a background agent is still running, purple) or **Libre** (idle, green), next to the last lines on screen. Sessions waiting for you are sorted first, and the tab title shows how many there are. The list refreshes every 3 s; pull down to refresh it right away. |
 | 🖥️ **Live terminal** | Opens the real tmux session in [xterm.js](https://xtermjs.org) over a WebSocket. It's the same session you see on your computer, not a copy. |
 | ⌨️ **Special keys + Detener** | A two-row key pad with plain-text labels: `1` `2` `3` to answer menus, `Esc`, `Tab`, `⇧Tab` to switch modes, `←` `↑` `↓` `→`, `Enter`, font size `A−`/`A+`, and a red **Detener** button that sends **Ctrl+C**. |
-| ✍️ **Prompt box** | Write long prompts comfortably. Multi-line text is sent as a bracketed paste, so line breaks don't submit early. **Ctrl/⌘+Enter** sends. |
+| ✍️ **Prompt box** | Write long prompts comfortably. Multi-line text is sent as a bracketed paste, so line breaks don't submit early. With a hardware keyboard, **Enter** sends and **Shift+Enter** adds a new line. |
 | 📎 **Attach images** | Pick a photo or screenshot. It is shrunk to a 2000 px maximum on the phone, uploaded to your computer, and its path is pasted into Claude, which attaches it as `[Image #N]`. |
 | 💬 **Chat-style history** | Reads the session's Claude Code transcript (`.jsonl`) and shows it as a chat: your messages, Claude's answers with Markdown and code blocks, and tool calls grouped into collapsible rows. Long commands are split at `&&`, `||` and `|` so they are easy to read, and every command or code block has a copy button. If no transcript is found, it falls back to the tmux scrollback. |
 | 🖼️ **Image viewer** | Image paths (png, jpg, gif, webp) shown in the terminal or the history are tappable and open full screen, with a tap to switch between fit and actual size, and a download button. Files Claude sends with `SendUserFile` show up in the history as thumbnails. The server only serves image files, and it resolves symlinks before checking the extension. |
@@ -67,6 +67,7 @@ The server is a single Node.js process (no framework, no build step) bound to `1
 | ➕ **New session with project search** | Start Claude in any of your repos: search by name or folder (accents and case ignored, recent ones first) or type a path, and star the folders you use every day as favorites. Choose which command or alias to run (or a plain terminal without Claude) and, optionally, a session name. |
 | 🔖 **Saved commands** | Save frequent commands or prompts on your computer and insert them into the prompt box, or send them with one tap, from any device. |
 | 🏷️ **`/rename` titles** | If you named a conversation with Claude Code's `/rename`, that name is shown instead of the folder name. |
+| 🪟 **Desktop sidebar + split view** | On a computer the session list stays in a sidebar next to the terminal, and you can put up to 4 sessions side by side. On the phone, tap the terminal title to jump to another session. |
 | 📱 **Installable PWA** | Add it to your home screen and it opens full screen like a native app. Built mobile-first with safe-area support, big touch targets and a dark graphite theme with orange accents. Works fine on desktop too. |
 
 <table>
@@ -246,7 +247,7 @@ Tap **Nueva** in the header:
 
 <p align="center"><img src="docs/screenshots/phone-terminal.png" width="260" alt="Terminal view"></p>
 
-The real tmux session, live. The header shows the session name, a **connection** indicator (green Wi-Fi when connected, red crossed-out Wi-Fi when disconnected; it reconnects automatically) a **?** button that explains every key and button (with the same icons), a red **end session** button (power icon) that, after confirming, types `/exit` into Claude so it prints its usual exit summary and the shell stays open (only shown while Claude is running). Once Claude has exited, a strip above the keys offers **Retomar** (reopens the same conversation with `--resume <id>`, read from Claude's exit message, or `--continue`) and **Nueva** (a fresh conversation), both using the command the session was started with, and the **history** button.
+The real tmux session, live. The header shows the session name (tap it to open the **session switcher**, a sheet with all your sessions; a badge counts the other ones waiting for a reply), a **connection** indicator (green Wi-Fi when connected, red crossed-out Wi-Fi when disconnected; it reconnects automatically) a **?** button that explains every key and button (with the same icons), a red **end session** button (power icon) that, after confirming, types `/exit` into Claude so it prints its usual exit summary and the shell stays open (only shown while Claude is running). Once Claude has exited, a strip above the keys offers **Retomar** (reopens the same conversation with `--resume <id>`, read from Claude's exit message, or `--continue`) and **Nueva** (a fresh conversation), both using the command the session was started with, and the **history** button.
 
 | Key | Sends | Use it for |
 |---|---|---|
@@ -265,14 +266,14 @@ The **?** button in the header lists every key and button with its icon and what
 The keys never steal focus, so the phone keyboard stays open.
 
 **Prompt box**: type and tap the send button (**Enviar**). Sending an empty box just presses Enter.
-Multi-line prompts are sent as a bracketed paste. **Ctrl/⌘+Enter** sends from a hardware keyboard.
+Multi-line prompts are sent as a bracketed paste. With a hardware keyboard, **Enter** sends and **Shift+Enter** adds a new line (Ctrl/⌘+Enter also sends).
 
 **📎 Attach image**: pick an image (png, jpg, gif, webp, up to 20 MB). Large photos are resized to 2000 px and re-encoded as JPEG on the phone.
 The file is saved on the computer in `$TMPDIR/claude-remote-uploads/` (mode 0700, deleted after a day) and its path is pasted into the prompt.
 
 **🔖 Saved commands**: the bookmark button next to the prompt box opens your saved commands. Tap one to insert it into the box (to review it first), or ▶ to send it right away; edit or delete them there too. A search box at the top filters them by name or text (accents and case ignored). Whatever is already typed in the box is pre-filled so you can save it. They are stored on the computer in `data/snippets.json`, so every device sees the same list.
 
-<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Key help">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Saved commands">&nbsp;&nbsp;<img src="docs/screenshots/phone-ended.png" width="240" alt="After ending Claude: Retomar or Nueva"><br><sub>Key help (?) · Saved commands · After /exit: Retomar or Nueva</sub></p>
+<p align="center"><img src="docs/screenshots/phone-help.png" width="240" alt="Key help">&nbsp;&nbsp;<img src="docs/screenshots/phone-snippets.png" width="240" alt="Saved commands">&nbsp;&nbsp;<img src="docs/screenshots/phone-ended.png" width="240" alt="After ending Claude: Retomar or Nueva">&nbsp;&nbsp;<img src="docs/screenshots/phone-switcher.png" width="240" alt="Session switcher"><br><sub>Key help (?) · Saved commands · After /exit: Retomar or Nueva · Session switcher</sub></p>
 
 ### History
 
@@ -295,9 +296,13 @@ Transcript content is always HTML-escaped before formatting.
 
 ### Desktop
 
-It works on a desktop browser too: the list becomes a grid and the history opens as a centered panel.
+On a screen 1024 px or wider, the session list becomes a **sidebar** next to the terminal, so switching sessions is one click. The sidebar keeps a stable order (by creation) so cards don't jump around; sessions waiting for you are still highlighted. The app version and commit are shown at the bottom.
 
-<img src="docs/screenshots/desktop-list.png" alt="Desktop list" width="100%">
+- **Split view**: the split button on each card adds that session to a grid of up to **4 terminals**. Click a terminal to focus it (orange border): the keys, the prompt box, history and *end session* act on the focused one. The ✕ on a terminal removes it from the split; clicking a card outside the split opens it alone.
+- **Shortcuts**: **Alt+1…9** opens session N of the sidebar; **Alt+↑ / Alt+↓** goes to the previous/next session, or moves focus between terminals in split view.
+- The history opens as a centered panel.
+
+<img src="docs/screenshots/desktop-split.png" alt="Desktop: sidebar and split view" width="100%">
 <img src="docs/screenshots/desktop-history.png" alt="Desktop history" width="100%">
 
 ## The `ct` helper

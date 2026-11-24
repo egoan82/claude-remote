@@ -24,19 +24,21 @@
     </header>
     <p id="status" class="muted"></p>
     <ul id="sessions"></ul>
+    <footer id="app-version" class="muted"></footer>
   </section>
 
   <!-- Terminal -->
   <section id="term-view" class="view hidden">
     <header class="bar">
       <button id="btn-back" class="ghost icon" aria-label="Volver"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-      <h1 id="term-title"></h1>
+      <h1><button type="button" id="btn-switch" class="ghost" title="Cambiar de sesión"><span id="term-title"></span><span id="switch-count" class="count-badge hidden" title="Otras sesiones que esperan respuesta"></span><svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h1>
       <span id="conn" class="dot" role="img" aria-label="Conexión"><svg class="i wifi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg><svg class="i wifi-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg></span>
       <button id="btn-help" class="ghost icon" title="Ayuda de las teclas" aria-label="Ayuda de las teclas"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
       <button id="btn-end" class="ghost icon" title="Terminar sesión" aria-label="Terminar sesión"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg></button>
       <button id="btn-history" class="ghost icon" title="Historial" aria-label="Historial"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></button>
     </header>
-    <div id="term"></div>
+    <div id="tiles"></div>
+    <div id="term-empty" class="empty"><svg class="i big" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg><strong>Elige una sesión</strong><span>Haz clic en una de la izquierda, o usa <kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>9</kbd>.<br>Con el botón de dividir de cada tarjeta ves hasta 4 a la vez.</span></div>
     <div id="relaunch" class="hidden"><p><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>Claude terminó</p><button type="button" id="btn-fresh"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Nueva</span></button><button type="button" id="btn-resume" class="primary"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Retomar</span></button></div>
     <div id="keys">
       <button data-k="1" aria-label="1" title="1">1</button><button data-k="2" aria-label="2" title="2">2</button><button data-k="3" aria-label="3" title="3">3</button><button data-k="esc" class="txt" aria-label="Esc" title="Esc">Esc</button><button data-k="tab" class="txt" aria-label="Tab" title="Tab">Tab</button><button data-k="stab" class="txt" aria-label="Mayús+Tab" title="Mayús+Tab"><span class="sh">⇧</span>Tab</button><button data-k="left" aria-label="Izquierda" title="Izquierda"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button><button data-k="up" aria-label="Arriba" title="Arriba"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button><button data-k="down" aria-label="Abajo" title="Abajo"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button><button data-k="right" aria-label="Derecha" title="Derecha"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button><button data-k="enter" aria-label="Enter" title="Enter"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4v7a4 4 0 0 1-4 4H4"/><path d="m9 10-5 5 5 5"/></svg><span>Enter</span></button><button type="button" data-k="ctrlc" class="stop" aria-label="Detener (Ctrl+C)" title="Detener (Ctrl+C)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="5" y="5" rx="2"/></svg><span>Detener</span></button>
@@ -49,6 +51,15 @@
       <button class="primary send" type="submit" aria-label="Enviar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg><span>Enviar</span></button>
     </form>
   </section>
+
+  <!-- Hoja de sesiones (celular) -->
+  <dialog id="switcher" aria-label="Sesiones">
+    <header class="bar">
+      <h1>Sesiones</h1>
+      <button class="ghost icon" id="btn-close-switcher" aria-label="Cerrar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </header>
+    <ul id="switch-list"></ul>
+  </dialog>
 
   <!-- Historial -->
   <dialog id="history">
