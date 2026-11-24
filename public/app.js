@@ -437,6 +437,16 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('focus', claimSize);
 
+// Barra lateral plegable (solo escritorio): más espacio para las terminales; se recuerda entre visitas.
+function setSidebar(hidden) {
+  document.body.classList.toggle('side-off', hidden);
+  const b = $('#btn-sidebar'), label = hidden ? 'Mostrar sesiones' : 'Ocultar sesiones';
+  b.setAttribute('aria-pressed', String(hidden)); b.setAttribute('aria-label', label); b.title = `${label} (Alt+\\)`;
+  store.set('sidebarHidden', hidden ? '1' : '0');
+}
+setSidebar(store.get('sidebarHidden', '0') === '1');
+$('#btn-sidebar').addEventListener('click', () => setSidebar(!document.body.classList.contains('side-off')));
+
 // Al cruzar el ancho de escritorio: el split solo existe en escritorio, así que en el celular queda la terminal con foco.
 DESK.addEventListener('change', () => {
   if (!DESK.matches && tiles.length > 1) { const p = currentPane; split = []; showPanes([p], p); }
@@ -450,6 +460,7 @@ window.addEventListener('keydown', (e) => {
   if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || document.querySelector('dialog[open]')) return;
   const order = stableOrder(lastSessions);
   let target = null;
+  if (e.code === 'Backslash') { if (DESK.matches) { e.preventDefault(); e.stopPropagation(); $('#btn-sidebar').click(); } return; }
   if (/^Digit[1-9]$/.test(e.code)) target = order[Number(e.code.slice(5)) - 1]?.pane;
   else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
     const step = e.code === 'ArrowDown' ? 1 : -1;
@@ -520,13 +531,14 @@ const HELP_KEYS = [
   ['font+', 'Letra más grande', 'Agranda el texto de la terminal (se recuerda).'],
 ];
 const HELP_BUTTONS = [
-  ['#btn-image', 'Adjuntar imagen', 'Sube una foto a la laptop y pega su ruta para que Claude la vea.'],
+  ['#btn-image', 'Adjuntar imagen', 'Sube una foto a la laptop y pega su ruta para que Claude la vea. En computadora también puedes pegar una imagen con Ctrl+V.'],
   ['#btn-snippets', 'Comandos guardados', 'Guarda comandos frecuentes; tocarlo lo inserta y ▶ lo envía directo.'],
   ['#prompt .send', 'Enviar', 'Manda lo escrito y pulsa Enter. Con el cuadro vacío envía solo Enter. En computadora: Enter envía y Mayús+Enter hace un salto de línea.'],
   ['#btn-end', 'Terminar sesión', 'Sale de Claude con /exit. Queda la terminal con el comando para retomar la conversación (--resume). Solo aparece mientras Claude está abierto.'],
   ['#btn-resume', 'Retomar', 'Aparece cuando Claude ya salió: lo vuelve a abrir en la misma conversación (--resume con el ID que mostró al salir).'],
   ['#btn-fresh', 'Nueva', 'Aparece cuando Claude ya salió: lo abre de nuevo con una conversación nueva, con el mismo comando.'],
   ['#btn-history', 'Historial', 'Muestra toda la conversación como chat, más cómoda de leer.'],
+  ['#btn-sidebar', 'Ocultar sesiones', 'Solo en computadora: pliega la lista de sesiones para dar más espacio a las terminales. Atajo: Alt+\\.'],
 ];
 const helpRow = (el, name, desc) => {
   const keycap = el ? [...el.childNodes].filter((n) => n.nodeName !== 'SPAN' || !el.querySelector('svg')).map((n) => n.outerHTML ?? esc(n.textContent)).join('') : '';
@@ -535,7 +547,7 @@ const helpRow = (el, name, desc) => {
 };
 $('#btn-help').addEventListener('click', () => {
   $('#help-body').innerHTML = `<h2>Teclas</h2><ul>${HELP_KEYS.map(([k, n, d]) => helpRow($(`#keys [data-k="${k}"]`), n, d)).join('')}</ul>`
-    + `<h2>Otros botones</h2><ul>${HELP_BUTTONS.map(([s, n, d]) => helpRow($(s), n, d)).join('')}</ul>`;
+    + `<h2>Otros botones</h2><ul>${HELP_BUTTONS.filter(([s]) => s !== '#btn-sidebar' || DESK.matches).map(([s, n, d]) => helpRow($(s), n, d)).join('')}</ul>`;
   $('#help').showModal();
 });
 $('#btn-close-help').addEventListener('click', () => $('#help').close());
@@ -636,10 +648,7 @@ async function shrink(file) {
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
 
 $('#btn-image').addEventListener('click', () => $('#image-file').click());
-$('#image-file').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file) return;
+async function uploadImage(file) {
   const btn = $('#btn-image');
   btn.disabled = true; btn.classList.add('busy');
   try {
@@ -649,7 +658,21 @@ $('#image-file').addEventListener('change', async (e) => {
   } catch (err) {
     alert(`No se pudo subir la imagen: ${err.message}`);
   } finally { btn.disabled = false; btn.classList.remove('busy'); }
+}
+$('#image-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (file) uploadImage(file);
 });
+// Pegar una imagen (Ctrl+V) en la terminal o en el cuadro de texto hace lo mismo que el botón de adjuntar.
+// Se captura antes que xterm; si el portapapeles solo trae texto, el pegado sigue su curso normal.
+window.addEventListener('paste', (e) => {
+  if ($('#term-view').classList.contains('hidden') || !tiles.length || document.querySelector('dialog[open]')) return;
+  const file = [...(e.clipboardData?.items || [])].find((it) => it.kind === 'file' && it.type.startsWith('image/'))?.getAsFile();
+  if (!file) return;
+  e.preventDefault(); e.stopPropagation();
+  uploadImage(file);
+}, true);
 
 // Historial completo del panel como chat (más cómodo para leer en el celular que la terminal).
 // La transcripción es contenido ajeno: todo se escapa antes de darle formato.

@@ -1,6 +1,7 @@
 /* Claude Remote — grafito neutro con acento naranja; el estado de cada sesión es lo que más resalta. */
 :root {
   --bg: #111111; --term-bg: #0a0a0a; --panel: #1c1c1c; --raised: #242424; --line: #2e2e2e; --line-soft: #262626;
+  --side: #1d1d1f; --side-card: #27272a; --side-raised: #303034; --side-line: #36363a; --stage: #0c0c0c;
   --text: #f2efe9; --muted: #9a948b; --dim: #6f6a63;
   --accent: #ff7a45; --accent-hi: #ff9466; --on-accent: #1f0d04;
   --waiting: #ffb020; --working: #ff7a45; --idle: #3ddc84; --agents: #a78bfa; --danger: #e5564b;
@@ -182,7 +183,7 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 .tile-close { width: 32px; min-height: 32px; }
 .tile-close .i { width: 16px; height: 16px; }
 #tiles:not([data-n="1"]) .tile-bar { display: flex; }
-#tiles:not([data-n="1"]) .tile.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+#tiles:not([data-n="1"]) .tile.focus { outline: 1.5px solid rgba(242, 239, 233, .55); outline-offset: 2px; }
 #tiles:not([data-n="1"]) .tile.focus .tile-name { color: var(--text); }
 .tile.off .tile-term { opacity: .55; }
 
@@ -520,12 +521,18 @@ dialog[open] { animation: rise .2s ease-out; }
 .thumbs .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumbs .file { font-size: 13px; color: var(--muted); padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; }
 
+#btn-sidebar { display: none; }
+@media (min-width: 1024px) { #btn-sidebar { display: inline-flex; } }
+
 /* ---------- escritorio: lista como barra lateral + terminal(es) al lado ---------- */
 @media (min-width: 1024px) {
   #sessions > .empty { display: none; } /* en escritorio el aviso va en el panel derecho */
   body { display: grid; grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 100vh; height: 100dvh; overflow: hidden; }
-  #list-view { max-width: none; height: auto; min-height: 0; overflow-y: auto; border-right: 1px solid var(--line-soft); }
-  #list-view .bar { padding: 12px 12px 8px; min-height: 58px; }
+  /* La barra lateral es una superficie más clara y cálida; el escenario de terminales, más oscuro. */
+  body { background: var(--stage); }
+  #list-view { max-width: none; height: auto; min-height: 0; overflow-y: auto; background: var(--side); border-right: 1px solid var(--side-line); box-shadow: 1px 0 0 rgba(0, 0, 0, .5); }
+  #list-view .bar { padding: 12px 12px 8px; min-height: 58px; background: rgba(29, 29, 31, .92); border-bottom: 1px solid var(--side-line); }
+  #term-view { background: var(--stage); }
   #list-view .bar .brand { font-size: 18px; }
   #list-view .mark { width: 30px; height: 30px; }
   #list-view #btn-new { min-height: 38px; padding: 6px 12px; }
@@ -533,11 +540,15 @@ dialog[open] { animation: rise .2s ease-out; }
   #sessions { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 6px 10px 20px; }
   #term-view { max-width: none; height: auto; min-height: 0; min-width: 0; }
   #btn-back { display: none; }
+  /* Sesiones plegadas: la terminal ocupa todo el ancho. Si no hay terminal abierta, la lista sigue visible. */
+  body.side-off:not(:has(#term-view.no-term)) { grid-template-columns: minmax(0, 1fr); }
+  body.side-off:not(:has(#term-view.no-term)) #list-view { display: none; }
+  #btn-sidebar[aria-pressed="true"] { color: var(--accent); }
   #btn-switch { pointer-events: none; }
   #btn-switch .chev, #switch-count { display: none !important; }
 
   /* Tarjetas compactas */
-  #sessions .card { padding: 10px 10px 10px 16px; }
+  #sessions .card { padding: 10px 10px 10px 16px; background: var(--side-card); border-color: var(--side-line); }
   #sessions .card .name { font-size: 15px; }
   #sessions .card .pico { display: none; }
   #sessions .card .badge { font-size: 11.5px; padding: 3px 9px 3px 6px; gap: 5px; }
@@ -549,8 +560,8 @@ dialog[open] { animation: rise .2s ease-out; }
   #sessions .card .orphan > span, #sessions .card .orphan > .i { display: none; }
   #sessions .card .orphan .acts { justify-content: flex-start; }
   #sessions .card .orphan .acts button { min-height: 30px; padding: 4px 10px; font-size: 12px; }
-  #sessions .card.viewing { background: var(--raised); }
-  #sessions .card.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  #sessions .card.viewing { background: var(--side-raised); }
+  #sessions .card.current { background: var(--side-raised); border-color: var(--side-line); outline: 1.5px solid rgba(242, 239, 233, .55); outline-offset: 2px; }
 
   .split-btn {
     display: inline-flex; width: 30px; min-height: 30px; padding: 0; margin: -4px -2px -4px 0; color: var(--dim);
@@ -558,5 +569,5 @@ dialog[open] { animation: rise .2s ease-out; }
   }
   .split-btn .i { width: 16px; height: 16px; }
   .split-btn:hover { color: var(--text); background: var(--raised); }
-  .split-btn[aria-pressed="true"] { color: var(--accent); background: rgba(255, 122, 69, .14); border-color: rgba(255, 122, 69, .45); }
+  .split-btn[aria-pressed="true"] { color: var(--text); background: rgba(242, 239, 233, .08); border-color: rgba(242, 239, 233, .2); }
 }
