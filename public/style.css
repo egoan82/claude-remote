@@ -522,6 +522,7 @@ dialog[open] { animation: rise .2s ease-out; }
 
 /* ---------- escritorio: lista como barra lateral + terminal(es) al lado ---------- */
 @media (min-width: 1024px) {
+  #sessions > .empty { display: none; } /* en escritorio el aviso va en el panel derecho */
   body { display: grid; grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 100vh; height: 100dvh; overflow: hidden; }
   #list-view { max-width: none; height: auto; min-height: 0; overflow-y: auto; border-right: 1px solid var(--line-soft); }
   #list-view .bar { padding: 12px 12px 8px; min-height: 58px; }

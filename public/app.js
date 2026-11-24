@@ -57,6 +57,7 @@ const stableOrder = (list) => [...list].sort((a, b) => Number(a.pane.slice(1)) -
 const urgentOrder = (list) => [...list].sort((a, b) => (a.state === 'waiting' ? -1 : 0) - (b.state === 'waiting' ? -1 : 0) || b.activity - a.activity);
 
 async function refresh() {
+  const asked = Date.now();
   try {
     const list = await api('/api/sessions');
     lastSessions = list;
@@ -74,9 +75,12 @@ async function refresh() {
       <li class="empty">${icon('empty', 'i big')}<strong>No hay sesiones de Claude en tmux</strong><span>Crea una con “Nueva” o lanza <code>ct</code> en la laptop.</span></li>`;
     const waiting = list.filter((s) => s.state === 'waiting').length;
     document.title = waiting ? `(${waiting}) Claude Remote` : 'Claude Remote';
-    // Un panel del split que ya no existe (se cerró) sale de la vista.
-    const gone = split.filter((p) => !list.some((s) => s.pane === p));
-    if (gone.length) gone.forEach(toggleSplit);
+    // Una terminal cuyo panel ya no existe (se cerró) sale de la vista en vez de reintentar para siempre.
+    // Solo las abiertas antes de pedir la lista: una recién creada aún puede no venir en ella.
+    const gone = tiles.filter((t) => t.born < asked && !list.some((s) => s.pane === t.pane)).map((t) => t.pane);
+    if (gone.length) closeGone(gone);
+    $('#term-empty strong').textContent = list.length ? 'Elige una sesión' : 'No hay sesiones de Claude en tmux';
+    $('#term-empty span').innerHTML = list.length ? EMPTY_HINT : 'Crea una con “Nueva” o lanza <code>ct</code> en la laptop.';
     if ($('#switcher').open) renderSwitcher();
     updateTermInfo();
   } catch (err) {
@@ -112,12 +116,14 @@ $('#sessions').addEventListener('click', async (e) => {
 // hasta MAX_TILES lado a lado (split). La que tiene el foco recibe las teclas, el prompt y las acciones del encabezado.
 const DESK = matchMedia('(min-width: 1024px)');
 const MAX_TILES = 4;
+const EMPTY_HINT = $('#term-empty span').innerHTML;
 let tiles = [], focused = null, currentPane = null;
 let split = []; // paneles elegidos para verse juntos (solo escritorio)
 
 class Tile {
   constructor(pane) {
     this.pane = pane;
+    this.born = Date.now();
     this.el = document.createElement('div');
     this.el.className = 'tile';
     this.el.dataset.pane = pane;
@@ -340,6 +346,15 @@ function toggleSplit(pane) {
   if (split.length < 2) split = [];
   if (panes.length) showPanes(panes, keep); else closeTerms();
   updateTermInfo();
+}
+
+function closeGone(gone) {
+  const left = tiles.map((t) => t.pane).filter((p) => !gone.includes(p));
+  split = split.filter((p) => left.includes(p));
+  if (split.length < 2) split = [];
+  if (left.length) return showPanes(left, left.includes(currentPane) ? currentPane : left[0]);
+  closeTerms();
+  history.replaceState(null, '', '/');
 }
 
 function closeTerms() {
