@@ -238,19 +238,24 @@ $('#btn-viewer-download').addEventListener('click', () => {
   document.body.append(a); a.click(); a.remove();
 });
 
-// Historial: convierte las rutas de imagen del texto ya pintado en enlaces al visor.
+// Historial: convierte las URLs y las rutas de imagen del texto ya pintado en enlaces.
+// Las URLs van primero en la alternancia: así https://x.com/a.png abre la página, no el visor local.
+const URL_RE = /https?:\/\/[^\s<>"'`]*[^\s<>"'`.,;:!?)\]}*]/gi;
+const LINK_RE = new RegExp(`${URL_RE.source}|${IMG_RE.source}`, 'gi');
 function linkImages(root) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode: (n) => (n.parentElement.closest('a, button, .img-link') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
   });
   const nodes = [];
-  while (walker.nextNode()) if (walker.currentNode.data.search(IMG_RE) >= 0) nodes.push(walker.currentNode);
+  while (walker.nextNode()) if (walker.currentNode.data.search(LINK_RE) >= 0) nodes.push(walker.currentNode);
   for (const n of nodes) {
     const frag = document.createDocumentFragment(); let at = 0;
-    for (const m of n.data.matchAll(IMG_RE)) {
+    for (const m of n.data.matchAll(LINK_RE)) {
       frag.append(n.data.slice(at, m.index));
       const a = document.createElement('a');
-      a.href = '#'; a.className = 'img-link'; a.dataset.img = m[0]; a.textContent = m[0];
+      if (/^https?:/i.test(m[0])) { a.href = m[0]; a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+      else { a.href = '#'; a.className = 'img-link'; a.dataset.img = m[0]; }
+      a.textContent = m[0];
       frag.append(a); at = m.index + m[0].length;
     }
     frag.append(n.data.slice(at));
@@ -678,7 +683,8 @@ window.addEventListener('paste', (e) => {
 // La transcripción es contenido ajeno: todo se escapa antes de darle formato.
 const inline = (t) => esc(t).split(/(`[^`\n]+`)/).map((part, i) => (i % 2
   ? `<code>${part.slice(1, -1)}</code>`
-  : part.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+  : part.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s()]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[^*\w])\*([^*\s][^*\n]*?)\*(?!\w)/g, '$1<em>$2</em>')
     .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, '<span class="lnk" title="$2">$1</span>'))).join('');
 
