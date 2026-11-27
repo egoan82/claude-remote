@@ -202,7 +202,7 @@ button.primary .i { width: 18px; height: 18px; stroke-width: 2.25; }
 .card.compact { padding: 10px 12px 10px 16px; }
 .card.compact .name { font-size: 15px; }
 .card.compact .meta { margin-top: 6px; }
-.card.current { border-color: var(--accent); }
+.card.current { background: var(--raised); border-color: var(--line); outline: 1.5px solid rgba(242, 239, 233, .55); outline-offset: 2px; }
 
 /* El botón de split solo existe en escritorio. */
 .split-btn { display: none; }
