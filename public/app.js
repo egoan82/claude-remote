@@ -34,6 +34,9 @@ const ICON = {
   trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
   split: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>',
+  'lay-grid': '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  'lay-cols': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/>',
+  'lay-rows': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M21 9H3"/><path d="M21 15H3"/>',
   empty: '<path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
 };
 const icon = (n, c = 'i') => `<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
@@ -64,7 +67,7 @@ async function refresh() {
     $('#status').textContent = '';
     const shown = DESK.matches ? stableOrder(list) : urgentOrder(list);
     $('#sessions').innerHTML = shown.length ? shown.map((s, i) => `
-      <li class="card ${s.state}${s.attached || s.state === 'term' ? '' : ' orphan'}" data-pane="${esc(s.pane)}">
+      <li class="card ${s.state}${s.attached || s.state === 'term' ? '' : ' orphan'}" data-pane="${esc(s.pane)}"${DESK.matches ? ' draggable="true"' : ''}>
         <div class="top">${icon('folder', 'i pico')}<span class="name">${esc(s.title || s.project)}</span><span class="badge ${s.state}">${icon(s.state)}${s.state === 'agents' && s.agents > 1 ? `Esperando ${s.agents} agentes` : STATE[s.state]}</span><button type="button" class="split-btn" aria-pressed="false" title="Ver junto a las otras (split)${i < 9 ? ` · Alt+${i + 1} para abrirla` : ''}" aria-label="Agregar al split">${icon('split')}</button></div>
         <div class="meta"><span class="tgt">${icon('term')}${esc(s.target)}</span>${s.account ? `<span class="acct acct-${Number(s.tone) || 0}" title="Cuenta de Claude">${icon('bot')}${esc(s.account)}</span>` : ''}<span class="cwd">${esc(s.cwd)}</span>${s.attached ? `<span class="att" title="Abierta en otra terminal">${icon('monitor')}abierta en otra terminal</span>` : s.state === 'term' || s.state === 'ended' ? '' : `<span class="att bg" title="Ninguna terminal de la laptop la tiene abierta">${icon('detached')}en segundo plano</span>`}</div>
         <pre>${esc((DESK.matches ? s.preview.filter((l) => l.trim()).slice(-1) : s.preview).join('\n'))}</pre>
@@ -127,7 +130,7 @@ class Tile {
     this.el = document.createElement('div');
     this.el.className = 'tile';
     this.el.dataset.pane = pane;
-    this.el.innerHTML = `<div class="tile-bar"><span class="tile-name"></span><span class="tile-badge"></span><button type="button" class="ghost icon tile-close" title="Quitar del split" aria-label="Quitar del split">${icon('x')}</button></div><div class="tile-term"></div>`;
+    this.el.innerHTML = `<div class="tile-bar" draggable="true" title="Arrastra para mover"><span class="tile-name"></span><span class="tile-badge"></span><button type="button" class="ghost icon tile-close" title="Quitar del split" aria-label="Quitar del split">${icon('x')}</button></div><div class="tile-term"></div>`;
     $('#tiles').append(this.el);
     this.term = new Terminal({
       fontSize: Number(store.get('fontSize', 12)), fontFamily: 'ui-monospace, "JetBrains Mono", Menlo, monospace',
@@ -142,6 +145,20 @@ class Tile {
     this.term.textarea?.addEventListener('focus', () => focusTile(this));
     this.el.addEventListener('pointerdown', (e) => { if (!e.target.closest('.tile-close')) focusTile(this); });
     this.el.querySelector('.tile-close').addEventListener('click', () => toggleSplit(this.pane));
+    const bar = this.el.querySelector('.tile-bar');
+    bar.addEventListener('dragstart', (e) => startDrag(e, this.pane, this.el));
+    bar.addEventListener('dragend', endDrag);
+    // Soltar otra terminal (o una tarjeta de la lista) encima: toma este lugar.
+    this.el.addEventListener('dragover', (e) => {
+      if (!dragPane || dragPane === this.pane) return;
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      this.el.classList.add('drop');
+    });
+    this.el.addEventListener('dragleave', (e) => { if (!this.el.contains(e.relatedTarget)) this.el.classList.remove('drop'); });
+    this.el.addEventListener('drop', (e) => {
+      e.preventDefault(); this.el.classList.remove('drop');
+      if (dragPane) placePane(dragPane, this.pane);
+    });
     this.ro = new ResizeObserver(() => this.resize());
     this.ro.observe(this.el.querySelector('.tile-term'));
     requestAnimationFrame(() => { if (!this.closed) { this.resize(); this.connect(); } });
@@ -352,6 +369,62 @@ function toggleSplit(pane) {
   if (panes.length) showPanes(panes, keep); else closeTerms();
   updateTermInfo();
 }
+
+// Arrastrar para ordenar (solo escritorio): la barra de una terminal o una tarjeta de la lista.
+// El panel arrastrado va en dragPane (dataTransfer no se puede leer durante dragover).
+let dragPane = null;
+function startDrag(e, pane, el) {
+  dragPane = pane;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('application/x-pane', pane);
+  el.classList.add('dragging');
+}
+function endDrag() {
+  dragPane = null;
+  for (const el of document.querySelectorAll('.dragging, .drop')) el.classList.remove('dragging', 'drop');
+}
+
+// Suelta src en el lugar de dst. Si src ya está a la vista, intercambian lugares; si viene de la lista,
+// entra en ese lugar (corre a las demás) y, si ya hay MAX_TILES, reemplaza a dst.
+function placePane(src, dst) {
+  const panes = tiles.map((t) => t.pane);
+  const i = panes.indexOf(src), j = panes.indexOf(dst);
+  if (src === dst || j < 0) return;
+  if (i >= 0) [panes[i], panes[j]] = [panes[j], panes[i]];
+  else if (panes.length < MAX_TILES) panes.splice(j, 0, src);
+  else panes[j] = src;
+  split = panes.length > 1 ? panes : [];
+  showPanes(panes, src);
+  updateTermInfo();
+}
+
+// Disposición del split: cuadrícula, columnas lado a lado o filas apiladas. Se recuerda entre visitas.
+const LAYOUTS = { grid: 'Cuadrícula', cols: 'Columnas', rows: 'Filas' };
+function setLayout(mode) {
+  if (!LAYOUTS[mode]) mode = 'grid';
+  $('#tiles').dataset.layout = mode;
+  const b = $('#btn-layout'), names = Object.keys(LAYOUTS), next = names[(names.indexOf(mode) + 1) % names.length];
+  b.innerHTML = icon(`lay-${mode}`);
+  b.title = `Disposición: ${LAYOUTS[mode]} · clic para ${LAYOUTS[next].toLowerCase()}`;
+  b.setAttribute('aria-label', b.title);
+  store.set('splitLayout', mode);
+}
+setLayout(store.get('splitLayout', 'grid'));
+$('#btn-layout').addEventListener('click', () => {
+  const names = Object.keys(LAYOUTS);
+  setLayout(names[(names.indexOf($('#tiles').dataset.layout) + 1) % names.length]);
+});
+
+// Tarjetas de la barra lateral: arrastrarlas sobre una terminal la pone en ese lugar del split.
+$('#sessions').addEventListener('dragstart', (e) => {
+  const card = e.target.closest?.('.card[data-pane]');
+  if (!card || !DESK.matches) { e.preventDefault(); return; }
+  startDrag(e, card.dataset.pane, card);
+});
+$('#sessions').addEventListener('dragend', endDrag);
+// Sin terminal abierta: soltar la tarjeta en el aviso la abre.
+$('#term-empty').addEventListener('dragover', (e) => { if (dragPane) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } });
+$('#term-empty').addEventListener('drop', (e) => { e.preventDefault(); if (dragPane) openPane(dragPane, true); });
 
 function closeGone(gone) {
   const left = tiles.map((t) => t.pane).filter((p) => !gone.includes(p));
@@ -1201,7 +1274,8 @@ api('/api/version').then(({ version, commit }) => {
 }).catch(() => {});
 
 // La lista se refresca siempre: en escritorio es la barra lateral y en el celular alimenta la hoja de sesiones.
-setInterval(() => { if (!document.hidden) refresh(); }, 3000);
+// No se refresca mientras se arrastra: rehacer la lista borraría la tarjeta que se está arrastrando.
+setInterval(() => { if (!document.hidden && !dragPane) refresh(); }, 3000);
 layout();
 
 const initial = new URLSearchParams(location.search).get('pane');

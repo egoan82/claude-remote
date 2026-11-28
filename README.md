@@ -303,6 +303,7 @@ Transcript content is always HTML-escaped before formatting.
 On a screen 1024 px or wider, the session list becomes a **sidebar** next to the terminal, so switching sessions is one click. The sidebar keeps a stable order (by creation) so cards don't jump around; sessions waiting for you are still highlighted. The app version and commit are shown at the bottom.
 
 - **Split view**: the split button on each card adds that session to a grid of up to **4 terminals**. Click a terminal to focus it (light ring): the keys, the prompt box, history and *end session* act on the focused one. The ✕ on a terminal removes it from the split; clicking a card outside the split opens it alone.
+- **Arrange the split**: drag a terminal by its title bar onto another to swap them, or drag a sidebar card onto a terminal to put it in that spot (it replaces that terminal when 4 are already open). The layout button in the header (shown with 2+ terminals) switches between **grid**, **columns** and **rows**, and is remembered.
 - **Shortcuts**: **Alt+1…9** opens session N of the sidebar; **Alt+↑ / Alt+↓** goes to the previous/next session, or moves focus between terminals in split view; **Alt+\\** hides or shows the sidebar (also the panel button left of the terminal title; the choice is remembered).
 - The history opens as a centered panel.
 

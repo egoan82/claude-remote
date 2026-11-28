@@ -302,6 +302,7 @@ El contenido de la transcripción siempre se escapa antes de darle formato.
 En pantallas de 1024 px o más, la lista de sesiones se vuelve una **barra lateral** junto a la terminal, así cambiar de sesión es un clic. La barra mantiene un orden fijo (por creación) para que las tarjetas no salten; las que esperan respuesta siguen resaltadas. Abajo se ven la versión y el commit de la app.
 
 - **Vista dividida**: el botón de dividir de cada tarjeta agrega esa sesión a una cuadrícula de hasta **4 terminales**. Haz clic en una terminal para darle el foco (anillo claro): las teclas, la caja de texto, el historial y *terminar sesión* actúan sobre esa. La ✕ de una terminal la quita de la vista dividida; un clic en una tarjeta que no está en ella la abre sola.
+- **Ordenar la vista dividida**: arrastra una terminal por su barra de título sobre otra para intercambiarlas, o arrastra una tarjeta de la barra lateral sobre una terminal para ponerla en ese lugar (si ya hay 4, reemplaza a esa terminal). El botón de disposición del encabezado (visible con 2 o más terminales) alterna entre **cuadrícula**, **columnas** y **filas**, y se recuerda.
 - **Atajos**: **Alt+1…9** abre la sesión N de la barra; **Alt+↑ / Alt+↓** va a la anterior o la siguiente, o pasa el foco entre terminales en la vista dividida; **Alt+\\** oculta o muestra la barra lateral (también el botón de panel a la izquierda del título de la terminal; se recuerda la elección).
 - El historial se abre como un panel centrado.
 
